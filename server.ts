@@ -2158,9 +2158,16 @@ function onFormSubmit(e) {
   });
 
   // Vite middleware in dev mode / static build in production
-  if (process.env.NODE_ENV !== 'production') {
+  const isRunningFromDist = __filename.includes('dist') || (Boolean(process.argv[1]) && process.argv[1].includes('dist'));
+  const hasDistFiles = fs.existsSync(path.join(process.cwd(), 'dist', 'index.html'));
+  const isProduction = process.env.NODE_ENV === 'production' || (isRunningFromDist && hasDistFiles);
+
+  if (!isProduction) {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        allowedHosts: true,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
