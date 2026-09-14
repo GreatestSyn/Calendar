@@ -7,7 +7,7 @@ import cookieParser from 'cookie-parser';
 import { OAuth2Client } from 'google-auth-library';
 import { createServer as createViteServer } from 'vite';
 import { calculateRecurringDates, formatRecurrenceLabel } from './src/utils/recurrence';
-import { calculateDaysBetween, formatEventDateRange } from './src/constants';
+import { calculateDaysBetween, formatEventDateRange, addDaysToDate } from './src/constants';
 import { RecurrenceRule } from './src/types';
 import {
   loadEvents,
@@ -766,7 +766,19 @@ async function startServer() {
         const trimmedEnd = rawEndDate.trim();
         if (trimmedEnd && trimmedEnd >= date) {
           endDate = trimmedEnd;
-          isMultiDay = endDate > date;
+          const spanDays = calculateDaysBetween(date, endDate);
+          if (spanDays >= 3) {
+            isMultiDay = true;
+          } else if (spanDays === 2) {
+            const rawIsMulti = body.isMultiDay ?? body['isMultiDay'] ?? body['Multi-Day'] ?? body['multi_day'];
+            if (rawIsMulti !== undefined) {
+              isMultiDay = rawIsMulti === true || rawIsMulti === 'true' || rawIsMulti === 'yes' || rawIsMulti === 'Yes';
+            } else {
+              isMultiDay = false;
+            }
+          } else {
+            isMultiDay = false;
+          }
         }
       }
 
@@ -862,7 +874,7 @@ async function startServer() {
         title,
         category,
         date,
-        endDate: isMultiDay ? endDate : undefined,
+        endDate: (endDate && endDate >= date) ? endDate : undefined,
         isMultiDay,
         startTime,
         endTime,
@@ -904,7 +916,7 @@ async function startServer() {
       // Send Automated Telegram Notification to Administrator
       let telegramResult: { success: boolean; error?: string } = { success: false };
       if (telegramConfig.isConfigured && telegramConfig.notifyOnSubmission) {
-        const dateRangeDisplay = formatEventDateRange(date, endDate);
+        const dateRangeDisplay = formatEventDateRange(date, endDate, isMultiDay);
         const tgMessage =
           `🔔 <b>New Google Form Event Submission</b>\n\n` +
           `📌 <b>Title:</b> ${title}\n` +
@@ -1060,6 +1072,10 @@ async function startServer() {
         const effectiveStartTime = typeof startTime === 'string' ? startTime.trim() : (isCelebration ? '' : '09:00');
         const effectiveEndTime = typeof endTime === 'string' ? endTime.trim() : (isCelebration ? '' : '10:00');
 
+        const daySpanOffset = (endDate && endDate > trimmedDate)
+          ? calculateDaysBetween(trimmedDate, endDate) - 1
+          : 0;
+
         const createdSeries: CalendarEvent[] = recurringDates.map((dateStr, idx) => ({
           id: idx === 0
             ? `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
@@ -1067,6 +1083,8 @@ async function startServer() {
           title: trimmedTitle,
           category,
           date: dateStr,
+          endDate: daySpanOffset > 0 ? addDaysToDate(dateStr, daySpanOffset) : undefined,
+          isMultiDay,
           startTime: effectiveStartTime,
           endTime: effectiveEndTime,
           status: 'pending',
@@ -1206,7 +1224,7 @@ async function startServer() {
       });
 
       if (telegramConfig.isConfigured && telegramConfig.notifyOnSubmission) {
-        const dateRangeDisplay = formatEventDateRange(newEvent.date, newEvent.endDate);
+        const dateRangeDisplay = formatEventDateRange(newEvent.date, newEvent.endDate, newEvent.isMultiDay);
         const timeDisplay = (newEvent.startTime && newEvent.endTime)
           ? `${newEvent.startTime} to ${newEvent.endTime}`
           : (newEvent.startTime ? `at ${newEvent.startTime}` : 'All Day / Untimed');
@@ -1272,6 +1290,12 @@ async function startServer() {
         notes,
       } = req.body.updates;
 
+      const baseDate = date || event.date;
+      const baseEndDate = endDate !== undefined ? endDate : event.endDate;
+      const spanOffset = (baseEndDate && baseDate && baseEndDate > baseDate)
+        ? calculateDaysBetween(baseDate, baseEndDate) - 1
+        : 0;
+
       for (const target of seriesEvents) {
         if (title !== undefined) target.title = String(title).trim();
         if (category !== undefined) target.category = category;
@@ -1279,6 +1303,11 @@ async function startServer() {
           if (date !== undefined) target.date = date;
           if (endDate !== undefined) target.endDate = endDate;
           if (isMultiDay !== undefined) target.isMultiDay = isMultiDay;
+        } else if (applyToSeries) {
+          if (isMultiDay !== undefined) target.isMultiDay = isMultiDay;
+          if (endDate !== undefined) {
+            target.endDate = spanOffset > 0 ? addDaysToDate(target.date, spanOffset) : undefined;
+          }
         }
         if (startTime !== undefined) target.startTime = startTime;
         if (endTime !== undefined) target.endTime = endTime;
@@ -1329,7 +1358,7 @@ async function startServer() {
         const recurrenceInfo = event.isRecurring && event.recurrenceRule?.humanReadable
           ? `\n🔁 <b>Series:</b> ${event.recurrenceRule.humanReadable}`
           : '';
-        const dateRangeDisplay = formatEventDateRange(event.date, event.endDate);
+        const dateRangeDisplay = formatEventDateRange(event.date, event.endDate, event.isMultiDay);
 
         const tgMsg =
           `✅ <b>NEW EVENT APPROVED</b>\n\n` +
@@ -1429,7 +1458,13 @@ async function startServer() {
       const seriesId = targetEvent.recurringSeriesId!;
       const seriesEvents = eventsStore.filter(e => e.recurringSeriesId === seriesId);
 
-      const { title, category, location, description, startTime, endTime, submitterName, submitterEmail, expectedAttendees, equipmentNeeds, notes } = req.body;
+      const { title, category, location, description, startTime, endTime, submitterName, submitterEmail, expectedAttendees, equipmentNeeds, notes, isMultiDay, endDate } = req.body;
+
+      const baseDate = req.body.date ? String(req.body.date).trim() : targetEvent.date;
+      const baseEndDate = endDate !== undefined ? (String(endDate).trim() || undefined) : targetEvent.endDate;
+      const spanOffset = (baseEndDate && baseDate && baseEndDate > baseDate)
+        ? calculateDaysBetween(baseDate, baseEndDate) - 1
+        : 0;
 
       for (const sEvt of seriesEvents) {
         if (title !== undefined && String(title).trim()) sEvt.title = String(title).trim();
@@ -1443,6 +1478,12 @@ async function startServer() {
         if (expectedAttendees !== undefined) sEvt.expectedAttendees = String(expectedAttendees).trim();
         if (equipmentNeeds !== undefined) sEvt.equipmentNeeds = String(equipmentNeeds).trim();
         if (notes !== undefined) sEvt.notes = String(notes).trim();
+        if (isMultiDay !== undefined) {
+          sEvt.isMultiDay = Boolean(isMultiDay);
+        }
+        if (endDate !== undefined) {
+          sEvt.endDate = spanOffset > 0 ? addDaysToDate(sEvt.date, spanOffset) : undefined;
+        }
       }
 
       if (req.body.date !== undefined && String(req.body.date).trim()) {
@@ -1514,7 +1555,7 @@ async function startServer() {
       id: `notif-${Date.now()}`,
       title: dateChanged ? 'Important Scheduling Change' : 'Event Updated',
       message: dateChanged
-        ? `"${updated.title}" rescheduled from ${formatEventDateRange(previous.date, previous.endDate)} to ${formatEventDateRange(updated.date, updated.endDate)}.`
+        ? `"${updated.title}" rescheduled from ${formatEventDateRange(previous.date, previous.endDate, previous.isMultiDay)} to ${formatEventDateRange(updated.date, updated.endDate, updated.isMultiDay)}.`
         : `"${updated.title}" event details updated.`,
       type: 'reschedule',
       eventId: updated.id,
@@ -1534,8 +1575,8 @@ async function startServer() {
     // Notify via Telegram if scheduling changed
     if (dateChanged && telegramConfig.isConfigured && telegramConfig.notifyOnReschedule) {
       const { chatId: targetChat, topicId: targetTopic } = getEventsChatAndTopic();
-      const oldRange = formatEventDateRange(previous.date, previous.endDate);
-      const newRange = formatEventDateRange(updated.date, updated.endDate);
+      const oldRange = formatEventDateRange(previous.date, previous.endDate, previous.isMultiDay);
+      const newRange = formatEventDateRange(updated.date, updated.endDate, updated.isMultiDay);
       const oldTime = (previous.startTime && previous.endTime)
         ? `${previous.startTime} – ${previous.endTime}`
         : (previous.startTime || 'Untimed');
@@ -1923,7 +1964,7 @@ async function startServer() {
       ? `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ''}`
       : (event.category === 'celebration' ? 'All Day Celebration' : 'All Day / Untimed');
 
-    const dateRangeDisplay = formatEventDateRange(event.date, event.endDate);
+    const dateRangeDisplay = formatEventDateRange(event.date, event.endDate, event.isMultiDay);
 
     const tgMsg =
       `🎉 <b>COMMUNITY EVENT SPOTLIGHT</b>\n\n` +
@@ -2070,7 +2111,7 @@ async function startServer() {
         return res.status(404).json({ error: 'Event not found' });
       }
 
-      const dateRangeDisplay = formatEventDateRange(event.date, event.endDate);
+      const dateRangeDisplay = formatEventDateRange(event.date, event.endDate, event.isMultiDay);
       const timeStr = event.startTime
         ? `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ''}`
         : 'All Day / Untimed';
@@ -2104,7 +2145,7 @@ async function startServer() {
 
     let summary = `📅 <b>Upcoming Scheduled Events Reminder</b>\n\n`;
     upcoming.forEach((e, idx) => {
-      const dateDisplay = formatEventDateRange(e.date, e.endDate);
+      const dateDisplay = formatEventDateRange(e.date, e.endDate, e.isMultiDay);
       const timeDisplay = e.startTime ? ` at ${e.startTime}` : '';
       summary += `${idx + 1}. <b>${e.title}</b>\n   🗓️ ${dateDisplay}${timeDisplay}\n   📍 ${e.location}\n\n`;
     });

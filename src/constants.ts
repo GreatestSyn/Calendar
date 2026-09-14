@@ -101,12 +101,27 @@ export function calculateDaysBetween(startDateStr: string, endDateStr?: string):
   return diffDays > 0 ? diffDays : 1;
 }
 
-export function formatEventDateRange(startDateStr: string, endDateStr?: string): string {
+export function addDaysToDate(dateStr: string, days: number): string {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + days);
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+export function formatEventDateRange(startDateStr: string, endDateStr?: string, isMultiDay?: boolean): string {
   if (!startDateStr) return '';
   if (!endDateStr || endDateStr === startDateStr) {
     return formatDatePretty(startDateStr);
   }
+  if (isMultiDay === false) {
+    return `${formatDatePretty(startDateStr)} (ends ${formatDatePretty(endDateStr)})`;
+  }
   const days = calculateDaysBetween(startDateStr, endDateStr);
   return `${formatDatePretty(startDateStr)} – ${formatDatePretty(endDateStr)} (${days} days)`;
 }
+
 

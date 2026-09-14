@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarEvent, EventCategory } from '../types';
-import { CATEGORIES, formatTime12h, formatDatePretty, calculateDaysBetween, formatEventDateRange } from '../constants';
+import { CATEGORIES, formatTime12h, formatDatePretty, calculateDaysBetween, formatEventDateRange, addDaysToDate } from '../constants';
 import {
   X,
   Calendar,
@@ -316,6 +316,28 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     setEditEquipment(event.equipmentNeeds || '');
     setEditError(null);
     setIsEditing(false);
+  };
+
+  const handleToggleMultiDay = async (newIsMultiDay: boolean) => {
+    if (!event) return;
+    setActionLoading(true);
+    setEditError(null);
+    try {
+      if (isPending) {
+        await onApprove(event.id, { isMultiDay: newIsMultiDay });
+      } else if (onUpdate) {
+        await onUpdate(event.id, { isMultiDay: newIsMultiDay }, editScope);
+      }
+      setEditSuccessMessage(
+        newIsMultiDay
+          ? 'Event converted to multi-day span across both days.'
+          : 'Multi-day span removed. Event is now posted strictly to the first day.'
+      );
+    } catch (err: any) {
+      setEditError(`Failed to update multi-day status: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleConfirmReject = async () => {
@@ -686,6 +708,34 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                   </div>
                 </div>
 
+                {/* Overnight Midnight Helper for Same-Day Late Hours */}
+                {editDate && editEndDate && editDate === editEndDate && editStartTime && editEndTime && editStartTime >= editEndTime && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/70 rounded-xl text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-in fade-in duration-150">
+                    <div className="flex items-start gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">Does this event run past midnight?</span>
+                        <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
+                          For overnight events (e.g., {formatTime12h(editStartTime)} to {formatTime12h(editEndTime)}), End Date should be set to the next day. You can uncheck "Post as multi-day" below to post strictly to the first day without a multi-day icon.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextDay = addDaysToDate(editDate, 1);
+                        setEditEndDate(nextDay);
+                        setEditIsMultiDay(false);
+                        setEditError(null);
+                      }}
+                      className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-amber-950 dark:text-amber-100 bg-amber-200/90 dark:bg-amber-900/60 hover:bg-amber-300 dark:hover:bg-amber-800 rounded-lg transition-colors border border-amber-300 dark:border-amber-700 shadow-2xs cursor-pointer"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Set as Overnight Next Day</span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Multi-day Setting for Spans >= 2 */}
                 {calculateDaysBetween(editDate, editEndDate) >= 2 && (
                   <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl space-y-1.5 animate-in fade-in duration-150">
@@ -947,6 +997,84 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 </div>
               )}
 
+              {/* 2-Day Multi-day / Overnight Quick Switcher Card for Admins */}
+              {Boolean(event.endDate && event.endDate > event.date && calculateDaysBetween(event.date, event.endDate) === 2 && isAdmin) && (
+                <div
+                  className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition-all ${
+                    event.isMultiDay
+                      ? 'bg-indigo-50/80 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-800'
+                      : 'bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        event.isMultiDay
+                          ? 'bg-indigo-600 text-white shadow-2xs'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      {event.isMultiDay ? (
+                        <CalendarRange className="w-4 h-4" />
+                      ) : (
+                        <Clock className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <span>
+                          {event.isMultiDay
+                            ? 'Multi-Day Event Span Active'
+                            : 'Overnight Single-Day Active (Start Date Only)'}
+                        </span>
+                        <span
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                            event.isMultiDay
+                              ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200'
+                              : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {event.isMultiDay ? 'Showing Across 2 Days' : 'Showing on 1st Day Only'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                        {event.isMultiDay
+                          ? `Currently displays on both ${formatDatePretty(event.date)} and ${formatDatePretty(event.endDate)} with a multi-day icon. Click to remove the icon and post only to the first day.`
+                          : `Currently posted strictly to ${formatDatePretty(event.date)} at ${formatTime12h(event.startTime)} (ends ${formatDatePretty(event.endDate)}). No multi-day icon is shown on the calendar.`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() => handleToggleMultiDay(!event.isMultiDay)}
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg transition-all shadow-2xs cursor-pointer ${
+                      event.isMultiDay
+                        ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                    }`}
+                    title={
+                      event.isMultiDay
+                        ? 'Remove multi-day icon and display strictly on the first date'
+                        : 'Enable multi-day span across both days'
+                    }
+                  >
+                    {event.isMultiDay ? (
+                      <>
+                        <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>Remove Multi-Day (Post 1st Day Only)</span>
+                      </>
+                    ) : (
+                      <>
+                        <CalendarRange className="w-3.5 h-3.5" />
+                        <span>Enable Multi-Day Span</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
               {/* Core Event Information Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 text-xs">
                 <div className="flex items-center gap-2.5">
@@ -963,7 +1091,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                     </div>
                     <div className="font-bold text-slate-900 dark:text-slate-100">
                       {(event.isMultiDay && event.endDate && event.endDate > event.date)
-                        ? formatEventDateRange(event.date, event.endDate)
+                        ? formatEventDateRange(event.date, event.endDate, event.isMultiDay)
                         : formatDatePretty(event.date)}
                     </div>
                   </div>

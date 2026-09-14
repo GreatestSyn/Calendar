@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CalendarEvent } from '../types';
-import { formatDatePretty, formatEventDateRange, calculateDaysBetween } from '../constants';
-import { X, CalendarClock, AlertTriangle, CalendarRange } from 'lucide-react';
+import { formatDatePretty, formatEventDateRange, calculateDaysBetween, addDaysToDate } from '../constants';
+import { X, CalendarClock, AlertTriangle, CalendarRange, Clock } from 'lucide-react';
 
 interface RescheduleModalProps {
   event: CalendarEvent | null;
@@ -132,7 +132,7 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
           )}
 
           <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-            <span className="font-semibold text-slate-700 dark:text-slate-200">Current Schedule:</span> {formatEventDateRange(event.date, event.endDate)}
+            <span className="font-semibold text-slate-700 dark:text-slate-200">Current Schedule:</span> {formatEventDateRange(event.date, event.endDate, event.isMultiDay)}
             {event.startTime ? ` from ${event.startTime} to ${event.endTime}` : ' (All Day / Untimed)'}
           </div>
 
@@ -225,6 +225,34 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                 />
               </div>
             </div>
+
+            {/* Overnight Midnight Helper for Same-Day Late Hours */}
+            {newDate && newEndDate && newDate === newEndDate && newStartTime && newEndTime && newStartTime >= newEndTime && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/70 rounded-xl text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-in fade-in duration-150">
+                <div className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Does this event run past midnight?</span>
+                    <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
+                      For overnight events (e.g., {newStartTime} to {newEndTime}), End Date should be set to the next day. You can uncheck "Post as multi-day" below to post strictly to the first day.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextDay = addDaysToDate(newDate, 1);
+                    setNewEndDate(nextDay);
+                    setIsMultiDay(false);
+                    setError(null);
+                  }}
+                  className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-amber-950 dark:text-amber-100 bg-amber-200/90 dark:bg-amber-900/60 hover:bg-amber-300 dark:hover:bg-amber-800 rounded-lg transition-colors border border-amber-300 dark:border-amber-700 shadow-2xs cursor-pointer"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Set as Overnight Next Day</span>
+                </button>
+              </div>
+            )}
 
             {/* Multi-day Setting for Spans >= 2 */}
             {calculateDaysBetween(newDate, newEndDate) >= 2 && (

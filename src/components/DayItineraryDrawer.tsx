@@ -198,7 +198,7 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
                       <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
                         <CalendarRange className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                         <span>Day {currentDayNumber} of {totalDays}</span>
-                        <span className="text-indigo-400 font-normal">({formatEventDateRange(event.date, event.endDate)})</span>
+                        <span className="text-indigo-400 font-normal">({formatEventDateRange(event.date, event.endDate, event.isMultiDay)})</span>
                       </div>
                     )}
 

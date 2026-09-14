@@ -250,6 +250,7 @@ function CalendarAppContent() {
           if (seriesId && e.recurringSeriesId === seriesId) {
             return {
               ...e,
+              ...(updates ? { isMultiDay: updates.isMultiDay } : {}),
               status: 'approved',
               approvedAt: res.event.approvedAt || new Date().toISOString(),
               approvedBy: res.event.approvedBy || 'Administrator',
@@ -611,7 +612,7 @@ function CalendarAppContent() {
                       <div className="flex flex-col sm:items-end text-xs text-slate-500 dark:text-slate-400 shrink-0 gap-1.5">
                         <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {(evt.isMultiDay && evt.endDate && evt.endDate > evt.date)
-                            ? formatEventDateRange(evt.date, evt.endDate)
+                            ? formatEventDateRange(evt.date, evt.endDate, evt.isMultiDay)
                             : formatDatePretty(evt.date)}
                         </span>
                         <span className="inline-flex items-center gap-1">

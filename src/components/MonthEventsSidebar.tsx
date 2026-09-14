@@ -192,7 +192,7 @@ export const MonthEventsSidebar: React.FC<MonthEventsSidebarProps> = ({
                       )}
                       <span>
                         {(evt.isMultiDay && evt.endDate && evt.endDate > evt.date)
-                          ? formatEventDateRange(evt.date, evt.endDate)
+                          ? formatEventDateRange(evt.date, evt.endDate, evt.isMultiDay)
                           : formatDatePretty(evt.date)}
                       </span>
                     </button>
@@ -241,7 +241,7 @@ export const MonthEventsSidebar: React.FC<MonthEventsSidebarProps> = ({
                         {evt.title}
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                        <span className="truncate pr-1">{formatEventDateRange(evt.date, evt.endDate)}</span>
+                        <span className="truncate pr-1">{formatEventDateRange(evt.date, evt.endDate, evt.isMultiDay)}</span>
                         <span className="shrink-0">{evt.startTime ? formatTime12h(evt.startTime) : (evt.category === 'celebration' ? 'All Day' : 'Untimed')}</span>
                       </div>
                     </div>

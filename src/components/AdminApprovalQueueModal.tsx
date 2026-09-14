@@ -24,7 +24,7 @@ import {
 interface AdminApprovalQueueModalProps {
   pendingEvents: CalendarEvent[];
   onClose: () => void;
-  onApprove: (id: string) => Promise<void>;
+  onApprove: (id: string, updates?: Partial<CalendarEvent>) => Promise<void>;
   onReject: (id: string, reason?: string) => Promise<void>;
   onDelete?: (id: string, scope?: 'single' | 'series') => Promise<void>;
   onSelectEvent: (event: CalendarEvent) => void;
@@ -131,10 +131,10 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
     setExpandedSeries((prev) => ({ ...prev, [seriesId]: !prev[seriesId] }));
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, updates?: Partial<CalendarEvent>) => {
     setProcessingId(id);
     try {
-      await onApprove(id);
+      await onApprove(id, updates);
     } finally {
       setProcessingId(null);
     }
@@ -256,10 +256,17 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
                         </span>
                       )}
 
-                      {!isSeries && (evt.isMultiDay || (evt.endDate && evt.endDate > evt.date)) && (
+                      {Boolean(evt.isMultiDay && evt.endDate && evt.endDate > evt.date) && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 px-2 py-0.5 rounded-md">
                           <CalendarRange className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
-                          <span>Multi-day ({calculateDaysBetween(evt.date, evt.endDate)} days)</span>
+                          <span>Multi-day ({calculateDaysBetween(evt.date, evt.endDate)} days{isSeries ? ' each' : ''})</span>
+                        </span>
+                      )}
+
+                      {Boolean(!evt.isMultiDay && evt.endDate && evt.endDate > evt.date) && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded-md">
+                          <Clock className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                          <span>Overnight (ends {formatDatePretty(evt.endDate)})</span>
                         </span>
                       )}
 
@@ -300,7 +307,7 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
                         </span>
                       ) : (
                         <span>
-                          {formatEventDateRange(evt.date, evt.endDate)}
+                          {formatEventDateRange(evt.date, evt.endDate, evt.isMultiDay)}
                           {evt.startTime
                             ? ` (${formatTime12h(evt.startTime)}${evt.endTime ? ` - ${formatTime12h(evt.endTime)}` : ''})`
                             : (evt.category === 'celebration' ? ' (All Day / Celebration)' : '')}
@@ -401,6 +408,19 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
                         <XCircle className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                         <span>{isSeries ? 'Decline Series' : 'Decline'}</span>
                       </button>
+
+                      {calculateDaysBetween(evt.date, evt.endDate) === 2 && evt.isMultiDay && (
+                        <button
+                          type="button"
+                          disabled={isProcessing}
+                          onClick={() => handleApprove(evt.id, { isMultiDay: false })}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                          title="Remove multi-day span and approve strictly on the first date at its start time"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                          <span>Approve as Overnight (1st Day Only)</span>
+                        </button>
+                      )}
 
                       <button
                         type="button"

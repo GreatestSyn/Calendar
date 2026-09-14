@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarEvent, EventCategory, RecurrenceRule } from '../types';
-import { CATEGORIES, calculateDaysBetween } from '../constants';
+import { CATEGORIES, calculateDaysBetween, addDaysToDate, formatTime12h } from '../constants';
 import { X, CalendarPlus, CheckCircle2, Sparkles, Clock, Repeat, CalendarRange } from 'lucide-react';
 import { submitEventDirect } from '../services/api';
 import { RecurrenceSelector } from './RecurrenceSelector';
@@ -471,6 +471,34 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Overnight Midnight Helper for Same-Day Late Hours */}
+              {date && endDate && date === endDate && startTime && endTime && startTime >= endTime && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/70 rounded-xl text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-in fade-in duration-150">
+                  <div className="flex items-start gap-2">
+                    <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Does this event run past midnight?</span>
+                      <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
+                        For overnight events (e.g., {formatTime12h(startTime)} to {formatTime12h(endTime)}), End Date should be set to the next day. You can leave "Post as multi-day" unchecked below to post strictly to the first day without a multi-day icon.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextDay = addDaysToDate(date, 1);
+                      setEndDate(nextDay);
+                      setIsMultiDay(false);
+                      setError(null);
+                    }}
+                    className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-amber-950 dark:text-amber-100 bg-amber-200/90 dark:bg-amber-900/60 hover:bg-amber-300 dark:hover:bg-amber-800 rounded-lg transition-colors border border-amber-300 dark:border-amber-700 shadow-2xs cursor-pointer"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Set as Overnight Next Day</span>
+                  </button>
+                </div>
+              )}
 
               {/* Multi-day Setting for Spans >= 2 */}
               {spanDays >= 2 && (
