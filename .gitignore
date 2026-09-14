@@ -11,3 +11,4 @@ caddy.exe
 data/backups/
 data/*.tmp
 /data
+*.json
