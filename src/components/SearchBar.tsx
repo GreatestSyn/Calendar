@@ -16,6 +16,7 @@ interface SearchBarProps {
   onStatusFilterChange: (st: 'all' | 'approved' | 'pending') => void;
   totalResults: number;
   onResetFilters: () => void;
+  isAdmin?: boolean;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -29,12 +30,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onStatusFilterChange,
   totalResults,
   onResetFilters,
+  isAdmin = false,
 }) => {
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
     selectedCategory !== 'all' ||
     timeframe !== 'all' ||
-    statusFilter !== 'all';
+    (isAdmin && statusFilter !== 'all');
 
   return (
     <section
@@ -94,29 +96,31 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             </div>
           </div>
 
-          {/* Status selector */}
-          <div className="flex items-center gap-1.5 sm:w-auto">
-            <label htmlFor="status-select" className="sr-only">
-              Filter by approval status
-            </label>
-            <div className="relative inline-flex items-center w-full sm:w-auto">
-              <Filter className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 absolute left-2.5 pointer-events-none" aria-hidden="true" />
-              <select
-                id="status-select"
-                value={statusFilter}
-                onChange={(e) => onStatusFilterChange(e.target.value as any)}
-                className="w-full sm:w-40 pl-8 pr-7 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
-                aria-label="Filter events by approval status"
-              >
-                <option value="all">All Statuses</option>
-                <option value="approved">Approved Only</option>
-                <option value="pending">Pending Approval</option>
-              </select>
-              <div className="absolute right-2.5 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
-                ▼
+          {/* Status selector (Admin only) */}
+          {isAdmin && (
+            <div className="flex items-center gap-1.5 sm:w-auto">
+              <label htmlFor="status-select" className="sr-only">
+                Filter by approval status
+              </label>
+              <div className="relative inline-flex items-center w-full sm:w-auto">
+                <Filter className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 absolute left-2.5 pointer-events-none" aria-hidden="true" />
+                <select
+                  id="status-select"
+                  value={statusFilter}
+                  onChange={(e) => onStatusFilterChange(e.target.value as any)}
+                  className="w-full sm:w-40 pl-8 pr-7 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-lg shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                  aria-label="Filter events by approval status"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="approved">Approved Only</option>
+                  <option value="pending">Pending Approval</option>
+                </select>
+                <div className="absolute right-2.5 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
+                  ▼
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Reset button */}
           {hasActiveFilters && (

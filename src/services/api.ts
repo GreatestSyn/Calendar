@@ -195,6 +195,14 @@ export async function markNotificationsRead(): Promise<void> {
   await fetch('/api/notifications/read-all', { method: 'POST' });
 }
 
+export async function dismissNotification(id: string): Promise<void> {
+  await fetch(`/api/notifications/${id}/dismiss`, { method: 'POST' });
+}
+
+export async function clearAllNotifications(): Promise<void> {
+  await fetch('/api/notifications/clear-all', { method: 'POST' });
+}
+
 export function subscribeToRealtimeEvents(
   onMessage: (msg: RealtimeMessage) => void,
   onStatusChange?: (status: 'connected' | 'connecting' | 'disconnected') => void

@@ -2243,6 +2243,41 @@ function onFormSubmit(e) {
     res.json({ success: true });
   });
 
+  // Dismiss a single notification (mark read)
+  app.post('/api/notifications/:id/dismiss', requireAdmin, (req: Request, res: Response) => {
+    const { id } = req.params;
+    const notif = notificationsStore.find(n => n.id === id);
+    if (notif) {
+      notif.read = true;
+      saveNotifications(notificationsStore);
+    }
+    res.json({ success: true });
+  });
+
+  // Clear all notifications permanently
+  app.post('/api/notifications/clear-all', requireAdmin, (_req: Request, res: Response) => {
+    notificationsStore = [];
+    saveNotifications(notificationsStore);
+    res.json({ success: true });
+  });
+
+  app.delete('/api/notifications', requireAdmin, (_req: Request, res: Response) => {
+    notificationsStore = [];
+    saveNotifications(notificationsStore);
+    res.json({ success: true });
+  });
+
+  // Delete a specific notification by ID
+  app.delete('/api/notifications/:id', requireAdmin, (req: Request, res: Response) => {
+    const { id } = req.params;
+    const initialLen = notificationsStore.length;
+    notificationsStore = notificationsStore.filter(n => n.id !== id);
+    if (notificationsStore.length !== initialLen) {
+      saveNotifications(notificationsStore);
+    }
+    res.json({ success: true });
+  });
+
   // Vite middleware in dev mode / static build in production
   const isRunningFromDist = __filename.includes('dist') || (Boolean(process.argv[1]) && process.argv[1].includes('dist'));
   const hasDistFiles = fs.existsSync(path.join(process.cwd(), 'dist', 'index.html'));

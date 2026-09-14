@@ -9,7 +9,9 @@ import {
   updateEvent,
   deleteEvent,
   fetchTelegramSettings,
-  sendTelegramReminder
+  sendTelegramReminder,
+  dismissNotification,
+  clearAllNotifications,
 } from './services/api';
 import { CalendarHeader } from './components/CalendarHeader';
 import { SearchBar, TimeframeFilter } from './components/SearchBar';
@@ -66,6 +68,7 @@ function CalendarAppContent() {
   const [currentMonthDate, setCurrentMonthDate] = useState<Date>(() => new Date(2026, 8, 1));
   const [events, setEvents] = useState<CalendarEvent[]>(INITIAL_EVENTS);
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [liveToasts, setLiveToasts] = useState<AdminNotification[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connecting');
   const [isTelegramConfigured, setIsTelegramConfigured] = useState(false);
 
@@ -129,18 +132,17 @@ function CalendarAppContent() {
             });
           }
           if (msg.event) {
-            setNotifications((prev) => [
-              {
-                id: `notif-${Date.now()}`,
-                title: 'New Event Submission',
-                message: `${msg.event.submitterName} submitted "${msg.event.title}" awaiting approval.`,
-                type: 'submission',
-                eventId: msg.event.id,
-                timestamp: msg.timestamp,
-                read: false,
-              },
-              ...prev,
-            ]);
+            const newNotif: AdminNotification = {
+              id: `notif-${Date.now()}`,
+              title: 'New Event Submission',
+              message: `${msg.event.submitterName} submitted "${msg.event.title}" awaiting approval.`,
+              type: 'submission',
+              eventId: msg.event.id,
+              timestamp: msg.timestamp,
+              read: false,
+            };
+            setNotifications((prev) => [newNotif, ...prev]);
+            setLiveToasts((prev) => [newNotif, ...prev]);
           }
         } else if (msg.type === 'EVENT_APPROVED' && msg.event) {
           const approvedSeriesId = msg.event.recurringSeriesId;
@@ -161,18 +163,17 @@ function CalendarAppContent() {
               return e;
             })
           );
-          setNotifications((prev) => [
-            {
-              id: `notif-${Date.now()}`,
-              title: 'Event Approved & Scheduled',
-              message: `"${msg.event.title}" has been published to the calendar.`,
-              type: 'approval',
-              eventId: msg.event.id,
-              timestamp: msg.timestamp,
-              read: false,
-            },
-            ...prev,
-          ]);
+          const approvedNotif: AdminNotification = {
+            id: `notif-${Date.now()}`,
+            title: 'Event Approved & Scheduled',
+            message: `"${msg.event.title}" has been published to the calendar.`,
+            type: 'approval',
+            eventId: msg.event.id,
+            timestamp: msg.timestamp,
+            read: false,
+          };
+          setNotifications((prev) => [approvedNotif, ...prev]);
+          setLiveToasts((prev) => [approvedNotif, ...prev]);
         } else if (msg.type === 'EVENT_REJECTED' && msg.event) {
           const rejectedSeriesId = msg.event.recurringSeriesId;
           const seriesEvents = msg.events && msg.events.length > 0 ? msg.events : [msg.event];
@@ -208,6 +209,7 @@ function CalendarAppContent() {
           }
           if (msg.notification) {
             setNotifications((prev) => [msg.notification, ...prev]);
+            setLiveToasts((prev) => [msg.notification, ...prev]);
           }
         } else if (msg.type === 'TELEGRAM_CONFIG_UPDATED') {
           fetchTelegramSettings()
@@ -350,10 +352,29 @@ function CalendarAppContent() {
   };
 
   const handleDismissNotification = (id: string) => {
+    setLiveToasts((prev) => prev.filter((n) => n.id !== id));
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    dismissNotification(id).catch((err) =>
+      console.warn('Failed to persist notification dismissal:', err)
+    );
   };
+
+  const handleClearAllNotifications = () => {
+    setLiveToasts([]);
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    clearAllNotifications().catch((err) =>
+      console.warn('Failed to clear all notifications on server:', err)
+    );
+  };
+
+  // Reset status filter if in standard visitor mode
+  useEffect(() => {
+    if (!effectiveIsAdmin && statusFilter !== 'all') {
+      setStatusFilter('all');
+    }
+  }, [effectiveIsAdmin, statusFilter]);
 
   const handleResetFilters = () => {
     setSearchQuery('');
@@ -490,6 +511,7 @@ function CalendarAppContent() {
         onStatusFilterChange={setStatusFilter}
         totalResults={filteredEvents.length}
         onResetFilters={handleResetFilters}
+        isAdmin={effectiveIsAdmin}
       />
 
       {/* Admin Approval Alert Banner (if pending submissions exist and admin mode active) */}
@@ -543,6 +565,7 @@ function CalendarAppContent() {
                 events={filteredEvents}
                 onSelectEvent={(evt) => setSelectedEvent(evt)}
                 onSelectDate={(dateStr) => setSelectedDate(dateStr)}
+                isAdmin={effectiveIsAdmin}
               />
             </div>
           </div>
@@ -561,12 +584,14 @@ function CalendarAppContent() {
             </div>
 
             {filteredEvents.length === 0 ? (
-              <div className="py-16 text-center">
-                <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">No events found</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
-                  Try adjusting your search criteria or submit a new event.
-                </p>
+              <div className="py-12 text-center text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-medium">No events found matching current criteria.</p>
+                <button
+                  onClick={handleResetFilters}
+                  className="mt-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  Clear all filters
+                </button>
               </div>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800" role="list">
@@ -589,14 +614,16 @@ function CalendarAppContent() {
                             <span className={`w-1.5 h-1.5 rounded-full ${meta.dotClass}`} />
                             {meta.label}
                           </span>
-                          {isPending ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
-                              <Hourglass className="w-2.5 h-2.5" /> Pending Approval
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-                              <CheckCircle2 className="w-2.5 h-2.5" /> Approved
-                            </span>
+                          {effectiveIsAdmin && (
+                            isPending ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
+                                <Hourglass className="w-2.5 h-2.5" /> Pending Approval
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                                <CheckCircle2 className="w-2.5 h-2.5" /> Approved
+                              </span>
+                            )
                           )}
                         </div>
 
@@ -653,6 +680,7 @@ function CalendarAppContent() {
       <DayItineraryDrawer
         selectedDate={selectedDate}
         events={events}
+        isAdmin={effectiveIsAdmin}
         onClose={() => setSelectedDate(null)}
         onSelectEvent={(evt) => setSelectedEvent(evt)}
         onAddEventForDate={(dateStr) => {
@@ -767,8 +795,9 @@ function CalendarAppContent() {
       {/* Floating Live Real-Time Notifications Toast (Admin only) */}
       {effectiveIsAdmin && (
         <LiveNotificationToast
-          notifications={notifications}
+          notifications={liveToasts}
           onDismiss={handleDismissNotification}
+          onClearAll={handleClearAllNotifications}
           onOpenApprovalQueue={() => setIsApprovalQueueOpen(true)}
           onSelectEventById={(id) => {
             const found = events.find((e) => e.id === id);

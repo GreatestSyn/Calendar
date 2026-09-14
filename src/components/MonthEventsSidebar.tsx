@@ -8,6 +8,7 @@ interface MonthEventsSidebarProps {
   events: CalendarEvent[];
   onSelectEvent: (event: CalendarEvent) => void;
   onSelectDate: (dateStr: string) => void;
+  isAdmin?: boolean;
 }
 
 export const MonthEventsSidebar: React.FC<MonthEventsSidebarProps> = ({
@@ -15,6 +16,7 @@ export const MonthEventsSidebar: React.FC<MonthEventsSidebarProps> = ({
   events,
   onSelectEvent,
   onSelectDate,
+  isAdmin = false,
 }) => {
   const [groupBy, setGroupBy] = useState<'date' | 'category'>('date');
 
@@ -157,15 +159,17 @@ export const MonthEventsSidebar: React.FC<MonthEventsSidebarProps> = ({
                       {meta.label}
                     </span>
 
-                    {isPending ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
-                        <Hourglass className="w-2.5 h-2.5" />
-                        Pending Approval
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-                        <CheckCircle className="w-2.5 h-2.5" /> Approved
-                      </span>
+                    {isAdmin && (
+                      isPending ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
+                          <Hourglass className="w-2.5 h-2.5" />
+                          Pending Approval
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                          <CheckCircle className="w-2.5 h-2.5" /> Approved
+                        </span>
+                      )
                     )}
                   </div>
 

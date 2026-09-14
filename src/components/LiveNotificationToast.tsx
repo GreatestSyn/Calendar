@@ -14,6 +14,7 @@ import {
 interface LiveNotificationToastProps {
   notifications: AdminNotification[];
   onDismiss: (id: string) => void;
+  onClearAll?: () => void;
   onOpenApprovalQueue: () => void;
   onSelectEventById?: (eventId: string) => void;
 }
@@ -21,6 +22,7 @@ interface LiveNotificationToastProps {
 export const LiveNotificationToast: React.FC<LiveNotificationToastProps> = ({
   notifications,
   onDismiss,
+  onClearAll,
   onOpenApprovalQueue,
   onSelectEventById,
 }) => {
@@ -32,6 +34,19 @@ export const LiveNotificationToast: React.FC<LiveNotificationToastProps> = ({
       aria-label="Live notifications"
       className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"
     >
+      {activeToasts.length > 0 && onClearAll && (
+        <div className="flex justify-end pointer-events-auto">
+          <button
+            type="button"
+            onClick={onClearAll}
+            className="text-[11px] font-semibold text-slate-300 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 px-2.5 py-1 rounded-lg shadow-md transition-colors cursor-pointer flex items-center gap-1"
+            title="Clear and dismiss all notifications"
+          >
+            <X className="w-3 h-3" />
+            <span>Clear Notifications</span>
+          </button>
+        </div>
+      )}
       <AnimatePresence>
         {activeToasts.map((n) => (
           <motion.div

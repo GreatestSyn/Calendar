@@ -430,24 +430,28 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 {meta.label}
               </span>
 
-              {/* Status Badge */}
-              {isPending && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  Awaiting Administrator Approval
-                </span>
-              )}
-              {isApproved && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/60">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  Approved & Scheduled
-                </span>
-              )}
-              {isRejected && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-900 dark:text-rose-200 border border-rose-300 dark:border-rose-700/60">
-                  <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                  Declined
-                </span>
+              {/* Status Badge (Admin only) */}
+              {isAdmin && (
+                <>
+                  {isPending && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      Awaiting Administrator Approval
+                    </span>
+                  )}
+                  {isApproved && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700/60">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      Approved & Scheduled
+                    </span>
+                  )}
+                  {isRejected && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-900 dark:text-rose-200 border border-rose-300 dark:border-rose-700/60">
+                      <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                      Declined
+                    </span>
+                  )}
+                </>
               )}
 
               {/* Multi-day / Overnight Badge */}
@@ -948,8 +952,8 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
           ) : (
             /* READ-ONLY VIEW MODE */
             <>
-              {/* Pending Review Notice with Edit CTA */}
-              {isPending && (
+              {/* Pending Review Notice with Edit CTA (Admin only) */}
+              {isPending && isAdmin && (
                 <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-start gap-2.5">
                     <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />

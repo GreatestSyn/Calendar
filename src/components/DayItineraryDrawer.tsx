@@ -23,6 +23,7 @@ interface DayItineraryDrawerProps {
   onClose: () => void;
   onSelectEvent: (event: CalendarEvent) => void;
   onAddEventForDate: (dateStr: string) => void;
+  isAdmin?: boolean;
 }
 
 export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
@@ -31,6 +32,7 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
   onClose,
   onSelectEvent,
   onAddEventForDate,
+  isAdmin = false,
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,6 +47,7 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
   // Filter and sort events for this day (including multi-day spans)
   const dayEvents = events
     .filter((e) => {
+      if (!isAdmin && e.status !== 'approved') return false;
       if (e.date === selectedDate) return true;
       if (e.isMultiDay && e.endDate && e.date <= selectedDate && e.endDate >= selectedDate) return true;
       return false;
@@ -229,14 +232,16 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
                           {event.submitterName}
                         </span>
 
-                        {isPending ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
-                            <Hourglass className="w-3 h-3" /> Awaiting Approval
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
-                            <CheckCircle2 className="w-3 h-3" /> Approved
-                          </span>
+                        {isAdmin && (
+                          isPending ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
+                              <Hourglass className="w-3 h-3" /> Awaiting Approval
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                              <CheckCircle2 className="w-3 h-3" /> Approved
+                            </span>
+                          )
                         )}
                       </div>
                     </div>
