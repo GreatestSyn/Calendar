@@ -1,0 +1,20 @@
+[
+  {
+    "id": "notif-1789400130002",
+    "title": "Event Approved",
+    "message": "\"Rad Rat Mosh\" was approved by Administrator.",
+    "type": "approval",
+    "eventId": "evt-1789400070771-brc64",
+    "timestamp": "2026-09-14T15:35:30.002Z",
+    "read": false
+  },
+  {
+    "id": "notif-1789400070772",
+    "title": "New Recurring Event Request",
+    "message": "Syn requested recurring \"Rad Rat Mosh\" (Every 1st Friday of the month (4 times), 4 events).",
+    "type": "submission",
+    "eventId": "evt-1789400070771-brc64",
+    "timestamp": "2026-09-14T15:34:30.771Z",
+    "read": false
+  }
+]

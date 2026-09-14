@@ -1,0 +1,6 @@
+{
+  "name": "Live Event Calendar & Scheduling Hub",
+  "description": "Real-time month calendar with color-coded event titles, Google Forms webhook integration, admin approval workflow, Telegram notifications, and searchable day itineraries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

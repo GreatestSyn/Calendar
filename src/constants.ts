@@ -1,0 +1,112 @@
+import { CalendarEvent, CategoryMeta, EventCategory } from './types';
+
+export const CATEGORIES: Record<EventCategory, CategoryMeta> = {
+  'SAKK Event': {
+    id: 'SAKK Event',
+    label: 'SAKK Event',
+    bgLight: 'bg-indigo-50',
+    bgSolid: 'bg-indigo-600',
+    textClass: 'text-indigo-800',
+    borderClass: 'border-indigo-200',
+    dotClass: 'bg-indigo-500',
+    hex: '#4f46e5',
+  },
+  'SAKK meeting': {
+    id: 'SAKK meeting',
+    label: 'SAKK Meeting',
+    bgLight: 'bg-sky-50',
+    bgSolid: 'bg-sky-600',
+    textClass: 'text-sky-800',
+    borderClass: 'border-sky-200',
+    dotClass: 'bg-sky-500',
+    hex: '#0284c7',
+  },
+  'Member Event (18+)': {
+    id: 'Member Event (18+)',
+    label: 'Member Event (18+)',
+    bgLight: 'bg-amber-50',
+    bgSolid: 'bg-amber-600',
+    textClass: 'text-amber-900',
+    borderClass: 'border-amber-200',
+    dotClass: 'bg-amber-500',
+    hex: '#d97706',
+  },
+  'Member EVent (21+)': {
+    id: 'Member EVent (21+)',
+    label: 'Member Event (21+)',
+    bgLight: 'bg-rose-50',
+    bgSolid: 'bg-rose-600',
+    textClass: 'text-rose-800',
+    borderClass: 'border-rose-200',
+    dotClass: 'bg-rose-500',
+    hex: '#e11d48',
+  },
+  celebration: {
+    id: 'celebration',
+    label: 'Celebration',
+    bgLight: 'bg-emerald-50',
+    bgSolid: 'bg-emerald-600',
+    textClass: 'text-emerald-800',
+    borderClass: 'border-emerald-200',
+    dotClass: 'bg-emerald-500',
+    hex: '#059669',
+  },
+  other: {
+    id: 'other',
+    label: 'Other',
+    bgLight: 'bg-slate-100',
+    bgSolid: 'bg-slate-600',
+    textClass: 'text-slate-800',
+    borderClass: 'border-slate-300',
+    dotClass: 'bg-slate-500',
+    hex: '#64748b',
+  },
+};
+
+export const INITIAL_EVENTS: CalendarEvent[] = [];
+
+export function formatTime12h(timeStr: string): string {
+  if (!timeStr) return '';
+  const [hoursStr, minutesStr] = timeStr.split(':');
+  let hours = parseInt(hoursStr, 10);
+  const minutes = minutesStr ? minutesStr.padStart(2, '0') : '00';
+  if (isNaN(hours)) return timeStr;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+export function formatDatePretty(dateStr: string): string {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  if (!year || !month || !day) return dateStr;
+  const d = new Date(year, month - 1, day);
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+export function calculateDaysBetween(startDateStr: string, endDateStr?: string): number {
+  if (!startDateStr || !endDateStr || endDateStr <= startDateStr) return 1;
+  const [sy, sm, sd] = startDateStr.split('-').map(Number);
+  const [ey, em, ed] = endDateStr.split('-').map(Number);
+  const start = new Date(sy, sm - 1, sd);
+  const end = new Date(ey, em - 1, ed);
+  const diffTime = end.getTime() - start.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  return diffDays > 0 ? diffDays : 1;
+}
+
+export function formatEventDateRange(startDateStr: string, endDateStr?: string): string {
+  if (!startDateStr) return '';
+  if (!endDateStr || endDateStr === startDateStr) {
+    return formatDatePretty(startDateStr);
+  }
+  const days = calculateDaysBetween(startDateStr, endDateStr);
+  return `${formatDatePretty(startDateStr)} – ${formatDatePretty(endDateStr)} (${days} days)`;
+}
+

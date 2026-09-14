@@ -1,0 +1,7 @@
+greatestsyn.duckdns.org {
+	tls {
+		dns duckdns "43fd2c2f-f250-4174-a394-246ae0d702f9"
+	}
+
+	reverse_proxy localhost:3001
+}
