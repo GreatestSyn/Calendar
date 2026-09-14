@@ -218,20 +218,20 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-6 flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 bg-sky-50/70 flex items-center justify-between">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-sky-50/70 dark:bg-sky-950/40 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shadow-xs">
               <Send className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="telegram-modal-title" className="text-base font-bold text-slate-900 leading-tight">
+              <h2 id="telegram-modal-title" className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">
                 Telegram Routing & Topic Automation
               </h2>
-              <p className="text-xs text-sky-900 font-medium">
+              <p className="text-xs text-sky-900 dark:text-sky-300 font-medium">
                 Route admin review alerts to one topic and community event updates/reminders to another topic
               </p>
             </div>
@@ -239,7 +239,7 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             aria-label="Close Telegram settings"
           >
             <X className="w-5 h-5" />
@@ -252,38 +252,38 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
             <div
               className={`p-3.5 rounded-xl font-medium border flex items-start gap-2 ${
                 testResult.success
-                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                  : 'bg-rose-50 text-rose-900 border-rose-300'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800'
               }`}
             >
               {testResult.success ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               ) : (
-                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               )}
               <span>{testResult.message}</span>
             </div>
           )}
 
           {/* Bot Token Configuration */}
-          <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div className="space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 flex items-center gap-1.5">
-                <Radio className="w-3.5 h-3.5 text-sky-600" />
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                 Telegram Bot Credentials
               </h3>
               <a
                 href="https://t.me/BotFather"
                 target="_blank"
                 rel="noreferrer"
-                className="text-sky-600 font-semibold hover:underline inline-flex items-center gap-1 text-[11px]"
+                className="text-sky-600 dark:text-sky-400 font-semibold hover:underline inline-flex items-center gap-1 text-[11px]"
               >
                 Create Bot via @BotFather <ExternalLink className="w-2.5 h-2.5" />
               </a>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Telegram Bot Token
               </label>
               <input
@@ -291,23 +291,23 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                 value={botToken}
                 onChange={(e) => setBotToken(e.target.value)}
                 placeholder="Leave blank to keep existing configured token"
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-mono text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg font-mono text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none"
               />
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                 API Token generated by @BotFather (e.g., <code>123456789:ABCdef...</code>). Ensure your bot has administrator permissions in the group.
               </p>
             </div>
           </div>
 
           {/* Topic Finding Guide Banner */}
-          <div className="p-3 bg-sky-50/70 border border-sky-200 rounded-xl flex items-start gap-2.5">
-            <HelpCircle className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-            <div className="space-y-1 text-[11px] text-sky-950">
-              <p className="font-bold text-sky-900">How to get a Topic ID (Message Thread ID) in Telegram:</p>
-              <ol className="list-decimal list-inside space-y-0.5 text-sky-800">
+          <div className="p-3 bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/60 rounded-xl flex items-start gap-2.5">
+            <HelpCircle className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-[11px] text-sky-950 dark:text-sky-200">
+              <p className="font-bold text-sky-900 dark:text-sky-200">How to get a Topic ID (Message Thread ID) in Telegram:</p>
+              <ol className="list-decimal list-inside space-y-0.5 text-sky-800 dark:text-sky-300">
                 <li>Make sure <strong>Topics</strong> are enabled in your Telegram Supergroup settings.</li>
                 <li>Right-click (or tap and hold on mobile) on the specific topic and click <strong>Copy Link</strong>.</li>
-                <li>The Topic ID is the number at the end of the link: <code className="bg-sky-100 px-1 py-0.5 rounded font-mono text-[10px]">https://t.me/c/1234567890/<strong>42</strong></code> &rarr; Topic ID is <strong>42</strong>.</li>
+                <li>The Topic ID is the number at the end of the link: <code className="bg-sky-100 dark:bg-sky-900/60 px-1 py-0.5 rounded font-mono text-[10px]">https://t.me/c/1234567890/<strong>42</strong></code> &rarr; Topic ID is <strong>42</strong>.</li>
                 <li><strong>General Topic:</strong> For the main/general chat topic, leave the Topic ID <strong>blank</strong> (or enter 1; our server automatically normalizes it).</li>
               </ol>
             </div>
@@ -316,23 +316,23 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
           {/* Chat & Topic Routing: Admin Topic vs Events Topic */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {/* 1. Admin Alerts Topic */}
-            <div className="bg-amber-50/50 border border-amber-200 p-4 rounded-xl flex flex-col justify-between space-y-3">
+            <div className="bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
-                    <ShieldAlert className="w-4 h-4 text-amber-600" />
+                  <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200 font-bold text-xs">
+                    <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     <span>1. Admin Alerts Topic</span>
                   </div>
-                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold text-[10px]">
+                  <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded font-bold text-[10px]">
                     Submissions
                   </span>
                 </div>
-                <p className="text-[11px] text-amber-800/80 leading-relaxed">
+                <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
                   Destination for incoming Google Form submissions, user requests, and administrator review notifications.
                 </p>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 text-[11px] mb-1">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 text-[11px] mb-1">
                     Group / Chat ID
                   </label>
                   <input
@@ -340,17 +340,17 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                     value={adminChatId}
                     onChange={(e) => setAdminChatId(e.target.value)}
                     placeholder="e.g., -1001987654321"
-                    className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
-                  <p className="text-[10px] text-slate-500 mt-0.5">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                     Supergroup ID (usually starts with <code>-100</code>)
                   </p>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 text-[11px] mb-1 flex items-center justify-between">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 text-[11px] mb-1 flex items-center justify-between">
                     <span className="flex items-center gap-1">
-                      <Hash className="w-3 h-3 text-amber-600" />
+                      <Hash className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                       Admin Topic ID (Thread ID)
                     </span>
                     <span className="text-[10px] text-slate-400 font-normal">Optional</span>
@@ -360,9 +360,9 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                     value={adminTopicId}
                     onChange={(e) => setAdminTopicId(e.target.value)}
                     placeholder="e.g., 2 (or leave blank for General)"
-                    className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
-                  <p className="text-[10px] text-slate-500 mt-0.5">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                     Numeric ID of the Admin / Mod topic.
                   </p>
                 </div>
@@ -372,7 +372,7 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                 type="button"
                 disabled={testingAdmin || !adminChatId}
                 onClick={() => handleTestConnection('admin')}
-                className="w-full py-1.5 text-[11px] font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-md border border-amber-300 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                className="w-full py-1.5 text-[11px] font-semibold text-amber-900 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded-md border border-amber-300 dark:border-amber-700 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-3 h-3" />
                 <span>{testingAdmin ? 'Pinging Admin Topic...' : 'Test Admin Topic'}</span>
@@ -380,37 +380,37 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
             </div>
 
             {/* 2. Events & Publications Topic */}
-            <div className="bg-emerald-50/50 border border-emerald-200 p-4 rounded-xl flex flex-col justify-between space-y-3">
+            <div className="bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-4 rounded-xl flex flex-col justify-between space-y-3">
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-emerald-900 font-bold text-xs">
-                    <Users className="w-4 h-4 text-emerald-600" />
+                  <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-200 font-bold text-xs">
+                    <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>2. Events & Publications Topic</span>
                   </div>
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">
+                  <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded font-bold text-[10px]">
                     Community
                   </span>
                 </div>
-                <p className="text-[11px] text-emerald-800/80 leading-relaxed">
+                <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 leading-relaxed">
                   Destination for approved event announcements, schedule changes, upcoming reminders, and calendar posts.
                 </p>
 
                 {/* Toggle: Same group chat or separate group */}
-                <label className="flex items-center gap-2 select-none cursor-pointer bg-emerald-100/40 p-2 rounded-lg border border-emerald-200">
+                <label className="flex items-center gap-2 select-none cursor-pointer bg-emerald-100/40 dark:bg-emerald-950/50 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
                   <input
                     type="checkbox"
                     checked={useSameChatForBoth}
                     onChange={(e) => setUseSameChatForBoth(e.target.checked)}
                     className="rounded text-emerald-600 h-3.5 w-3.5"
                   />
-                  <span className="text-[11px] font-semibold text-emerald-950">
+                  <span className="text-[11px] font-semibold text-emerald-950 dark:text-emerald-200">
                     Use same group as Admin (different topic)
                   </span>
                 </label>
 
                 {!useSameChatForBoth && (
                   <div>
-                    <label className="block font-semibold text-slate-700 text-[11px] mb-1">
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 text-[11px] mb-1">
                       Events Group / Channel ID
                     </label>
                     <input
@@ -418,18 +418,18 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                       value={eventsChatId}
                       onChange={(e) => setEventsChatId(e.target.value)}
                       placeholder="e.g., -1001234567890 or @sakk_events"
-                      className="w-full px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
-                    <p className="text-[10px] text-slate-500 mt-0.5">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                       Separate group or channel for community events
                     </p>
                   </div>
                 )}
 
                 <div>
-                  <label className="block font-semibold text-slate-700 text-[11px] mb-1 flex items-center justify-between">
+                  <label className="block font-semibold text-slate-700 dark:text-slate-300 text-[11px] mb-1 flex items-center justify-between">
                     <span className="flex items-center gap-1">
-                      <Hash className="w-3 h-3 text-emerald-600" />
+                      <Hash className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                       Events Topic ID (Thread ID)
                     </span>
                     <span className="text-[10px] text-slate-400 font-normal">Optional</span>
@@ -439,9 +439,9 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                     value={eventsTopicId}
                     onChange={(e) => setEventsTopicId(e.target.value)}
                     placeholder="e.g., 5 (or leave blank for General)"
-                    className="w-full px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
-                  <p className="text-[10px] text-slate-500 mt-0.5">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                     Numeric ID of the Events / Announcements topic.
                   </p>
                 </div>
@@ -451,7 +451,7 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                 type="button"
                 disabled={testingEvents || (!eventsChatId && !useSameChatForBoth && !adminChatId)}
                 onClick={() => handleTestConnection('events')}
-                className="w-full py-1.5 text-[11px] font-semibold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 rounded-md border border-emerald-300 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                className="w-full py-1.5 text-[11px] font-semibold text-emerald-900 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/40 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 rounded-md border border-emerald-300 dark:border-emerald-700 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-3 h-3" />
                 <span>{testingEvents ? 'Pinging Events Topic...' : 'Test Events Topic'}</span>
@@ -461,12 +461,12 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
 
           {/* Automated Notification Rules */}
           <div className="space-y-2.5 pt-1">
-            <h3 className="font-bold text-slate-900 flex items-center gap-1.5">
-              <Bell className="w-3.5 h-3.5 text-sky-600" />
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <Bell className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
               Automation Rules & Topic Triggers
             </h3>
 
-            <div className="space-y-2.5 border border-slate-200 rounded-xl p-3 bg-white">
+            <div className="space-y-2.5 border border-slate-200 dark:border-slate-800 rounded-xl p-3 bg-white dark:bg-slate-850">
               {/* Submission to Admin Topic */}
               <label className="flex items-start gap-2.5 cursor-pointer select-none">
                 <input
@@ -477,22 +477,22 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-800 flex items-center gap-1">
-                      <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                    <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                      <ShieldAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                       Alert Admin on New Google Form & User Submissions
                     </span>
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 shrink-0">
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0">
                       &rarr; Admin Topic
                     </span>
                   </div>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
                     Sends instant notification to your <strong>Admin Alerts Topic</strong> when someone submits an event.
                   </p>
                 </div>
               </label>
 
               {/* Approval to Events Topic */}
-              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-slate-100">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-slate-100 dark:border-slate-800">
                 <input
                   type="checkbox"
                   checked={notifyOnApproval}
@@ -501,22 +501,22 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-800 flex items-center gap-1">
-                      <CalendarCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                      <CalendarCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       Post Approved Event Announcements in Events Chat
                     </span>
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
                       &rarr; Events Topic
                     </span>
                   </div>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
                     When an admin approves a submission, automatically dispatches full event details to your <strong>Events & Publications Topic</strong>.
                   </p>
                 </div>
               </label>
 
               {/* Rescheduling Alerts to Events Topic */}
-              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-slate-100">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-slate-100 dark:border-slate-800">
                 <input
                   type="checkbox"
                   checked={notifyOnReschedule}
@@ -525,22 +525,22 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-800 flex items-center gap-1">
-                      <AlertTriangle className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       Post Rescheduling & Important Time Changes
                     </span>
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
                       &rarr; Events Topic
                     </span>
                   </div>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
                     Alerts the community in your <strong>Events & Publications Topic</strong> when an event is rescheduled.
                   </p>
                 </div>
               </label>
 
               {/* Daily Scheduled Event Reminders */}
-              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-slate-100">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-slate-100 dark:border-slate-800">
                 <input
                   type="checkbox"
                   checked={notifyDailyReminders}
@@ -549,22 +549,22 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-800 flex items-center gap-1">
-                      <Bell className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                      <Bell className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       Daily Morning Event Reminders
                     </span>
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
                       &rarr; Events Topic
                     </span>
                   </div>
-                  <p className="text-slate-500 text-[11px] mt-0.5">
+                  <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
                     Dispatches a daily morning overview of today's approved schedule to the <strong>Events & Publications Topic</strong>.
                   </p>
                 </div>
               </label>
 
               {/* Monthly Automated Calendar Post */}
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <label className="flex items-start gap-2.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -574,25 +574,25 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                   />
                   <div className="flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-slate-800 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                      <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                         Monthly Automated Calendar Publication
                       </span>
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                      <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
                         &rarr; Events Topic
                       </span>
                     </div>
-                    <p className="text-slate-500 text-[11px] mt-0.5">
+                    <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
                       Automatically publishes a monthly calendar summary with breakdown to the <strong>Events & Publications Topic</strong>.
                     </p>
                   </div>
                 </label>
 
                 {notifyMonthlyCalendar && (
-                  <div className="mt-2.5 ml-6.5 p-2.5 bg-indigo-50/50 rounded-lg border border-indigo-100 space-y-2">
+                  <div className="mt-2.5 ml-6.5 p-2.5 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-lg border border-indigo-100 dark:border-indigo-900/50 space-y-2">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-indigo-600" />
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                         <span>Day of month to post:</span>
                         <input
                           type="number"
@@ -600,33 +600,33 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                           max={28}
                           value={monthlyPostDay}
                           onChange={(e) => setMonthlyPostDay(Math.max(1, Math.min(28, parseInt(e.target.value) || 1)))}
-                          className="w-14 px-2 py-1 bg-white border border-slate-300 rounded text-center font-bold text-xs"
+                          className="w-14 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded text-center font-bold text-xs"
                         />
-                        <span className="text-slate-500 font-normal">(e.g. 1st of every month)</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-normal">(e.g. 1st of every month)</span>
                       </label>
 
-                      <label className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5 cursor-pointer">
+                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={includeCalendarImage}
                           onChange={(e) => setIncludeCalendarImage(e.target.checked)}
                           className="rounded text-indigo-600 h-3.5 w-3.5"
                         />
-                        <ImageIcon className="w-3 h-3 text-indigo-600" />
+                        <ImageIcon className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                         <span>Include Calendar Image in post</span>
                       </label>
                     </div>
 
                     {onOpenMonthlyBroadcastModal && (
                       <div className="pt-1 flex items-center justify-between text-[11px]">
-                        <span className="text-slate-500">Want to preview or broadcast right now?</span>
+                        <span className="text-slate-500 dark:text-slate-400">Want to preview or broadcast right now?</span>
                         <button
                           type="button"
                           onClick={() => {
                             onClose();
                             onOpenMonthlyBroadcastModal();
                           }}
-                          className="font-bold text-indigo-600 hover:text-indigo-800 underline inline-flex items-center gap-1"
+                          className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 underline inline-flex items-center gap-1 cursor-pointer"
                         >
                           <Sparkles className="w-3 h-3" />
                           <span>Open Monthly Image Broadcast &rarr;</span>
@@ -641,15 +641,15 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
 
           {/* Last Monthly Post Info */}
           {lastMonthlyPost && (
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-[11px] text-slate-600">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
               <div className="flex items-center gap-2">
-                <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                 <span>
                   <strong>Last Monthly Broadcast:</strong> {new Date(lastMonthlyPost.timestamp).toLocaleDateString()} at {new Date(lastMonthlyPost.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({lastMonthlyPost.hasImage ? 'Image attached' : 'Text overview'})
                   {lastMonthlyPost.topicId ? ` (Topic #${lastMonthlyPost.topicId})` : ''}
                 </span>
               </div>
-              <span className={`px-2 py-0.5 rounded font-semibold ${lastMonthlyPost.success ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+              <span className={`px-2 py-0.5 rounded font-semibold ${lastMonthlyPost.success ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300'}`}>
                 {lastMonthlyPost.success ? 'Delivered' : 'Failed'}
               </span>
             </div>
@@ -661,20 +661,20 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
               type="button"
               disabled={sendingReminder || (!adminChatId && !eventsChatId)}
               onClick={handleSendReminderBroadcast}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-300 dark:border-slate-700 rounded-lg shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
             >
-              <Bell className="w-3 h-3 text-emerald-600" />
+              <Bell className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
               <span>{sendingReminder ? 'Broadcasting...' : "Broadcast Today's Reminders to Events Topic Now"}</span>
             </button>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div className="p-4 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
+            className="px-4 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
           >
             Cancel
           </button>

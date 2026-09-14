@@ -152,20 +152,20 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden my-6 animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
               <CalendarPlus className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="submit-modal-title" className="text-base font-bold text-slate-900 leading-tight">
+              <h2 id="submit-modal-title" className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">
                 Submit Calendar Event
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 New submissions are queued for administrator review
               </p>
             </div>
@@ -173,7 +173,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -182,18 +182,18 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-3.5 text-xs max-h-[75vh] overflow-y-auto">
           {error && (
-            <div className="p-3 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
+            <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800/80">
               {error}
             </div>
           )}
 
           {/* Celebration Informational Note */}
           {isCelebration && (
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2.5">
-              <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <p className="font-bold text-xs">Celebration / Anniversary Announcement Mode</p>
-                <p className="text-[11px] text-amber-800 leading-relaxed">
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
                   Only the <strong>Title</strong>, <strong>Category</strong>, and <strong>Date</strong> are required. Times, location, and submitter info are optional if you just want to announce an anniversary or milestone.
                 </p>
               </div>
@@ -201,7 +201,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
           )}
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Event Title *
             </label>
             <input
@@ -210,19 +210,19 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={isCelebration ? 'e.g., SAKK 10th Anniversary Celebration' : 'e.g., Annual Strategy Review'}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Category *
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as EventCategory)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               >
                 {Object.values(CATEGORIES).map((cat) => (
                   <option key={cat.id} value={cat.id}>
@@ -234,7 +234,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block font-semibold text-slate-700">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
                   {isMultiDay ? 'Start Date *' : 'Scheduled Date *'}
                 </label>
                 <label className="inline-flex items-center gap-1 cursor-pointer select-none">
@@ -250,7 +250,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                     }}
                     className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span className="text-[11px] font-medium text-slate-600">Multi-day</span>
+                  <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Multi-day</span>
                 </label>
               </div>
               <input
@@ -264,25 +264,25 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                     setEndDate(newStart);
                   }
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
           </div>
 
           {/* Multi-day Event Range Selection */}
           {isMultiDay && (
-            <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2 animate-in fade-in duration-150">
+            <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl space-y-2 animate-in fade-in duration-150">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-indigo-950 flex items-center gap-1.5">
-                  <CalendarRange className="w-3.5 h-3.5 text-indigo-600" />
+                <span className="font-semibold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                  <CalendarRange className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                   Multi-day Event Range
                 </span>
-                <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-100/90 px-2 py-0.5 rounded-full border border-indigo-200">
+                <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100/90 dark:bg-indigo-900/60 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
                   {calculateDaysBetween(date, endDate)} day{calculateDaysBetween(date, endDate) === 1 ? '' : 's'} total
                 </span>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-indigo-900 mb-1">
+                <label className="block text-[11px] font-medium text-indigo-900 dark:text-indigo-300 mb-1">
                   End Date *
                 </label>
                 <input
@@ -291,7 +291,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                   min={date}
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white border border-indigo-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -299,10 +299,10 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
 
           {/* Time Selection */}
           {isCelebration ? (
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                   Event Timing <span className="text-slate-400 font-normal">(Optional)</span>
                 </span>
                 <button
@@ -310,8 +310,8 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                   onClick={() => setIsAllDayCelebration(!isAllDayCelebration)}
                   className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg border transition-colors ${
                     isAllDayCelebration
-                      ? 'bg-amber-100 text-amber-900 border-amber-300'
-                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                      ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
                   {isAllDayCelebration ? '✓ All-Day Announcement' : 'Set Specific Hours'}
@@ -321,25 +321,25 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
               {!isAllDayCelebration && (
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                       Start Time
                     </label>
                     <input
                       type="time"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
                       End Time
                     </label>
                     <input
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Start Time *
                 </label>
                 <input
@@ -356,11 +356,11 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                   required
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   End Time *
                 </label>
                 <input
@@ -368,7 +368,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                   required
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -384,7 +384,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
           {/* Submitter Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Preferred Name {isCelebration ? <span className="text-slate-400 font-normal">(Optional)</span> : '*'}
               </label>
               <input
@@ -393,11 +393,11 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                 value={submitterName}
                 onChange={(e) => setSubmitterName(e.target.value)}
                 placeholder={isCelebration ? 'Optional (e.g. Alex Rivera)' : 'e.g., Alex Rivera'}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Telegram Handle {isCelebration ? <span className="text-slate-400 font-normal">(Optional)</span> : '*'}
               </label>
               <input
@@ -406,13 +406,13 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                 value={submitterEmail}
                 onChange={(e) => setSubmitterEmail(e.target.value)}
                 placeholder={isCelebration ? 'Optional (e.g. @alex_sakk)' : 'e.g., @alex_sakk'}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Location / Virtual Meeting Link {isCelebration ? <span className="text-slate-400 font-normal">(Optional)</span> : '*'}
             </label>
             <input
@@ -421,12 +421,12 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder={isCelebration ? 'Optional (e.g. Main Hall or leave empty for general announcement)' : 'e.g., Main Community Hall 204 or https://meet.google.com/...'}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Event Description {isCelebration ? <span className="text-slate-400 font-normal">(Optional)</span> : '*'}
             </label>
             <textarea
@@ -435,13 +435,13 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={isCelebration ? 'Optional celebration details or anniversary milestone announcement...' : 'Outline objectives, agendas, or background details...'}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Expected Attendees <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <input
@@ -449,11 +449,11 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                 value={expectedAttendees}
                 onChange={(e) => setExpectedAttendees(e.target.value)}
                 placeholder="e.g., 20 people"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Equipment Needs <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <input
@@ -461,7 +461,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
                 value={equipmentNeeds}
                 onChange={(e) => setEquipmentNeeds(e.target.value)}
                 placeholder="e.g., Projector, mic"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
           </div>
@@ -470,7 +470,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="px-3.5 py-2 font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             >
               Cancel
             </button>

@@ -15,8 +15,11 @@ import {
   User,
   Eye,
   EyeOff,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { AuthUser } from '../types';
+import { useTheme } from '../context/ThemeContext';
 
 interface CalendarHeaderProps {
   currentMonthDate: Date;
@@ -64,13 +67,14 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onToggleViewAsUser,
   onOpenAuthModal,
 }) => {
+  const { isDark, toggleTheme } = useTheme();
   const monthName = currentMonthDate.toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
   });
 
   return (
-    <header className="bg-white border-b border-slate-200 px-4 py-3 sm:px-6 shadow-xs sticky top-0 z-20">
+    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-6 shadow-xs sticky top-0 z-20 transition-colors duration-200">
       <div className="max-w-7xl mx-auto flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         {/* Left: Brand & Navigation */}
         <div className="flex items-center flex-wrap gap-3">
@@ -79,10 +83,10 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
               <CalendarIcon className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">
+              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">
                 Live Event Calendar
               </h1>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
                 <span
                   className={`inline-block w-2 h-2 rounded-full ${
                     connectionStatus === 'connected'
@@ -99,23 +103,23 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           </div>
 
           {/* Month Stepper */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200" role="group" aria-label="Month navigation">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700" role="group" aria-label="Month navigation">
             <button
               onClick={onPrevMonth}
-              className="p-1.5 rounded-md text-slate-700 hover:bg-white hover:shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="p-1.5 rounded-md text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 hover:shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
               aria-label="Previous month"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <span
-              className="px-3 py-1 text-sm font-semibold text-slate-800 min-w-[140px] text-center select-none"
+              className="px-3 py-1 text-sm font-semibold text-slate-800 dark:text-slate-200 min-w-[140px] text-center select-none"
               aria-live="polite"
             >
               {monthName}
             </span>
             <button
               onClick={onNextMonth}
-              className="p-1.5 rounded-md text-slate-700 hover:bg-white hover:shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="p-1.5 rounded-md text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 hover:shadow-xs transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
               aria-label="Next month"
             >
               <ChevronRight className="w-4 h-4" />
@@ -124,21 +128,21 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
 
           <button
             onClick={onToday}
-            className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             Today
           </button>
 
           {/* View Mode Toggle */}
-          <div className="hidden sm:flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200" role="tablist" aria-label="View switcher">
+          <div className="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700" role="tablist" aria-label="View switcher">
             <button
               role="tab"
               aria-selected={viewMode === 'grid'}
               onClick={() => onToggleViewMode('grid')}
               className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-white text-indigo-700 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
               <Grid className="w-3.5 h-3.5" aria-hidden="true" />
@@ -150,8 +154,8 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
               onClick={() => onToggleViewMode('list')}
               className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
                 viewMode === 'list'
-                  ? 'bg-white text-indigo-700 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
               <ListFilter className="w-3.5 h-3.5" aria-hidden="true" />
@@ -170,12 +174,12 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                 onClick={onOpenApprovalQueue}
                 className={`relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
                   pendingCount > 0
-                    ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 shadow-2xs ring-1 ring-amber-400/50'
-                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 shadow-2xs'
+                    ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 shadow-2xs ring-1 ring-amber-400/50'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs'
                 } focus:outline-none focus:ring-2 focus:ring-amber-500`}
                 aria-label={`Administrator approval queue with ${pendingCount} pending submissions`}
               >
-                <ShieldCheck className="w-4 h-4 text-amber-600" aria-hidden="true" />
+                <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                 <span>Approvals</span>
                 {pendingCount > 0 && (
                   <span className="ml-0.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[11px] font-bold leading-none text-white bg-amber-600 rounded-full animate-pulse">
@@ -189,17 +193,17 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
                 onClick={onOpenTelegramSettings}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
                   isTelegramConfigured
-                    ? 'bg-sky-50 text-sky-800 border-sky-300 hover:bg-sky-100 shadow-2xs'
-                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 shadow-2xs'
+                    ? 'bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border-sky-300 dark:border-sky-700 hover:bg-sky-100 dark:hover:bg-sky-900/50 shadow-2xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs'
                 } focus:outline-none focus:ring-2 focus:ring-sky-500`}
                 aria-label="Telegram notification settings"
               >
-                <Send className="w-3.5 h-3.5 text-sky-600" aria-hidden="true" />
+                <Send className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" aria-hidden="true" />
                 <span className="hidden sm:inline">Telegram Alerts</span>
                 <span className="sm:hidden">Telegram</span>
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    isTelegramConfigured ? 'bg-sky-500' : 'bg-slate-300'
+                    isTelegramConfigured ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                 />
               </button>
@@ -207,11 +211,11 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
               {/* Export & Monthly Broadcast to Events Chat */}
               <button
                 onClick={onOpenMonthlyBroadcast}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 aria-label="Export calendar as image and post monthly summary to events chat"
                 title="Export calendar as image and post to Telegram events chat"
               >
-                <ImageIcon className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
+                <ImageIcon className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
                 <span className="hidden lg:inline">Export & Events Chat</span>
                 <span className="lg:hidden">Export / Post</span>
               </button>
@@ -219,10 +223,10 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
               {/* Google Form Integration Setup */}
               <button
                 onClick={onOpenGoogleFormModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 aria-label="Google Form integration instructions and simulator"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                 <span className="hidden md:inline">Google Form Setup</span>
                 <span className="md:hidden">Form Setup</span>
               </button>
@@ -232,7 +236,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           {/* Direct Submit Event (Accessible to everyone) */}
           <button
             onClick={onOpenSubmitModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 rounded-lg transition-colors shadow-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
             aria-label="Submit a new event"
           >
             <PlusCircle className="w-3.5 h-3.5" aria-hidden="true" />
@@ -245,20 +249,20 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
               onClick={onToggleViewAsUser}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all shadow-2xs ${
                 isViewingAsUser
-                  ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200'
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                  ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-900'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
               } focus:outline-none focus:ring-2 focus:ring-amber-500`}
               title={isViewingAsUser ? 'Viewing as public visitor. Click to return to Admin View.' : 'Preview the calendar as a public visitor'}
             >
               {isViewingAsUser ? (
                 <>
-                  <EyeOff className="w-3.5 h-3.5 text-amber-700" />
+                  <EyeOff className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                   <span className="hidden md:inline">Exit Visitor View</span>
                   <span className="md:hidden">Admin View</span>
                 </>
               ) : (
                 <>
-                  <Eye className="w-3.5 h-3.5 text-slate-500" />
+                  <Eye className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                   <span className="hidden md:inline">View as User</span>
                   <span className="md:hidden">User View</span>
                 </>
@@ -266,33 +270,47 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             </button>
           )}
 
+          {/* Theme Toggle Button (Dark / Light mode) */}
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? (
+              <Sun className="w-4 h-4 text-amber-400" aria-hidden="true" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-600" aria-hidden="true" />
+            )}
+          </button>
+
           {/* User Account / Sign In Trigger */}
           {currentUser ? (
             <button
               onClick={onOpenAuthModal}
-              className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
               title="Account settings & sign out"
             >
               {currentUser.picture ? (
                 <img
                   src={currentUser.picture}
                   alt={currentUser.name}
-                  className="w-5 h-5 rounded-full object-cover border border-slate-300"
+                  className="w-5 h-5 rounded-full object-cover border border-slate-300 dark:border-slate-600"
                 />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px]">
+                <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold text-[10px]">
                   {currentUser.name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="text-xs font-semibold text-slate-800 max-w-[100px] truncate hidden sm:inline">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[100px] truncate hidden sm:inline">
                 {currentUser.name.split(' ')[0]}
               </span>
               {currentUser.role === 'admin' ? (
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800">
                   Admin
                 </span>
               ) : (
-                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
                   Viewer
                 </span>
               )}
@@ -300,10 +318,10 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           ) : (
             <button
               onClick={onOpenAuthModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
               aria-label="Sign in"
             >
-              <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
+              <KeyRound className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               <span>Sign In</span>
             </button>
           )}

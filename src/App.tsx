@@ -26,6 +26,7 @@ import { SubmitEventModal } from './components/SubmitEventModal';
 import { LiveNotificationToast } from './components/LiveNotificationToast';
 import { AuthModal } from './components/AuthModal';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -44,9 +45,11 @@ import { downloadIcsFile } from './utils/calendarExport';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CalendarAppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CalendarAppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
@@ -428,7 +431,7 @@ function CalendarAppContent() {
   }, [events, searchQuery, selectedCategory, statusFilter, timeframe, currentMonthDate, effectiveIsAdmin]);
 
   return (
-    <div className="min-h-screen bg-slate-100/70 flex flex-col text-slate-900 font-sans">
+    <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 flex flex-col text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
       {/* Top Navigation & Header */}
       <CalendarHeader
         currentMonthDate={currentMonthDate}
@@ -492,18 +495,18 @@ function CalendarAppContent() {
       {pendingEvents.length > 0 && effectiveIsAdmin && (
         <section
           aria-label="Pending administrator approval alert"
-          className="bg-amber-50 border-b border-amber-200 px-4 py-2 sm:px-6"
+          className="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/60 px-4 py-2 sm:px-6"
         >
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-amber-900">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-amber-900 dark:text-amber-200">
             <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
+              <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
               <span>
                 <strong>Administrator Alert:</strong> {pendingEvents.length} new {pendingEvents.length === 1 ? 'event submission is' : 'event submissions are'} awaiting approval.
               </span>
             </div>
             <button
               onClick={() => setIsApprovalQueueOpen(true)}
-              className="inline-flex items-center gap-1 font-bold text-amber-900 hover:text-amber-950 underline self-start sm:self-auto"
+              className="inline-flex items-center gap-1 font-bold text-amber-900 dark:text-amber-300 hover:text-amber-950 dark:hover:text-amber-100 underline self-start sm:self-auto"
             >
               <span>Review Approval Queue ({pendingEvents.length}) &rarr;</span>
             </button>
@@ -526,9 +529,9 @@ function CalendarAppContent() {
               />
 
               {/* Instructions badge below calendar */}
-              <div className="mt-3 flex items-center justify-between text-xs text-slate-500 px-1">
+              <div className="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
                 <span>Tip: Click any date cell to open its day itinerary; click an event title to view full Google Form details.</span>
-                <span className="hidden sm:inline font-medium text-indigo-600">Real-time SSE active</span>
+                <span className="hidden sm:inline font-medium text-indigo-600 dark:text-indigo-400">Real-time SSE active</span>
               </div>
             </div>
 
@@ -544,13 +547,13 @@ function CalendarAppContent() {
           </div>
         ) : (
           /* Month List View */
-          <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-5">
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 p-5">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-slate-800">
               <div>
-                <h2 className="text-base font-bold text-slate-900">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                   {currentMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} Complete Event Directory
                 </h2>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {filteredEvents.length} events matching current filters
                 </p>
               </div>
@@ -558,14 +561,14 @@ function CalendarAppContent() {
 
             {filteredEvents.length === 0 ? (
               <div className="py-16 text-center">
-                <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-sm font-bold text-slate-800">No events found</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+                <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">No events found</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
                   Try adjusting your search criteria or submit a new event.
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100" role="list">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800" role="list">
                 {filteredEvents.map((evt) => {
                   const meta = CATEGORIES[evt.category] || CATEGORIES.other;
                   const isPending = evt.status === 'pending';
@@ -575,7 +578,7 @@ function CalendarAppContent() {
                       key={evt.id}
                       role="listitem"
                       onClick={() => setSelectedEvent(evt)}
-                      className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 px-3 rounded-lg transition-colors cursor-pointer"
+                      className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/60 px-3 rounded-lg transition-colors cursor-pointer"
                     >
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -590,34 +593,34 @@ function CalendarAppContent() {
                               <Hourglass className="w-2.5 h-2.5" /> Pending Approval
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700">
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
                               <CheckCircle2 className="w-2.5 h-2.5" /> Approved
                             </span>
                           )}
                         </div>
 
-                        <h3 className="text-sm font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                           {evt.title}
                         </h3>
 
-                        <p className="text-xs text-slate-600 line-clamp-1 max-w-2xl">
+                        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-1 max-w-2xl">
                           {evt.description}
                         </p>
                       </div>
 
-                      <div className="flex flex-col sm:items-end text-xs text-slate-500 shrink-0 gap-1.5">
-                        <span className="font-semibold text-slate-800">
+                      <div className="flex flex-col sm:items-end text-xs text-slate-500 dark:text-slate-400 shrink-0 gap-1.5">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {formatDatePretty(evt.date)}
                         </span>
                         <span className="inline-flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                           {evt.startTime
                             ? `${formatTime12h(evt.startTime)}${evt.endTime ? ` - ${formatTime12h(evt.endTime)}` : ''}`
                             : (evt.category === 'celebration' ? 'All Day Celebration' : 'Untimed')}
                         </span>
                         {evt.location && (
                           <span className="inline-flex items-center gap-1 text-[11px] truncate max-w-xs">
-                            <MapPin className="w-3 h-3 text-slate-400" />
+                            <MapPin className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                             {evt.location}
                           </span>
                         )}
@@ -627,7 +630,7 @@ function CalendarAppContent() {
                             e.stopPropagation();
                             downloadIcsFile(evt);
                           }}
-                          className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200/60 shadow-2xs transition-colors self-start sm:self-end"
+                          className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-2 py-0.5 rounded border border-indigo-200/60 dark:border-indigo-800/80 shadow-2xs transition-colors self-start sm:self-end"
                           title="Download this event to your personal calendar (.ics)"
                         >
                           <Download className="w-3 h-3" />

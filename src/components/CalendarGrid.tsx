@@ -101,13 +101,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   return (
     <div
       id="calendar-grid-container"
-      className="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden"
+      className="bg-white dark:bg-slate-900 rounded-xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden"
       role="region"
       aria-label="Calendar month grid"
     >
       {/* Weekday headers */}
       <div
-        className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-slate-700 font-semibold text-xs text-center py-2.5"
+        className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 font-semibold text-xs text-center py-2.5"
         role="row"
       >
         {WEEKDAYS.map((wd) => (
@@ -120,7 +120,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
       {/* Days grid */}
       <div
-        className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-slate-100 bg-slate-100"
+        className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-slate-100 dark:divide-slate-800/80 bg-slate-100 dark:bg-slate-800/80"
         role="grid"
         aria-label="Monthly dates"
       >
@@ -149,11 +149,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 }
               }}
               className={`min-h-[110px] sm:min-h-[125px] p-1.5 sm:p-2 transition-all flex flex-col justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10 ${
-                cell.isCurrentMonth ? 'bg-white' : 'bg-slate-50/70 text-slate-400'
+                cell.isCurrentMonth
+                  ? 'bg-white dark:bg-slate-900'
+                  : 'bg-slate-50/70 dark:bg-slate-950/50 text-slate-400 dark:text-slate-600'
               } ${
                 isSelected
-                  ? 'ring-2 ring-indigo-600 bg-indigo-50/20'
-                  : 'hover:bg-slate-50/80'
+                  ? 'ring-2 ring-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/30'
+                  : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
               }`}
             >
               {/* Top Row: Day Number & Event count indicator */}
@@ -163,17 +165,17 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                     cell.isToday
                       ? 'bg-indigo-600 text-white shadow-2xs font-bold'
                       : isSelected
-                      ? 'bg-indigo-100 text-indigo-900 font-bold'
+                      ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-200 font-bold'
                       : cell.isCurrentMonth
-                      ? 'text-slate-800'
-                      : 'text-slate-400'
+                      ? 'text-slate-800 dark:text-slate-200'
+                      : 'text-slate-400 dark:text-slate-600'
                   }`}
                 >
                   {cell.dayNumber}
                 </span>
 
                 {hasEvents && (
-                  <span className="text-[10px] font-medium text-slate-500 sm:hidden px-1 rounded bg-slate-100">
+                  <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 sm:hidden px-1 rounded bg-slate-100 dark:bg-slate-800">
                     {cell.events.length}
                   </span>
                 )}
@@ -197,14 +199,14 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       title={`${event.title}${event.isMultiDay ? ' (Multi-day)' : ''}${event.startTime ? ` (${formatTime12h(event.startTime)})` : ' (All Day)'} - Click for full details`}
                       className={`group w-full text-left text-[11px] leading-tight px-1.5 py-1 rounded-md border transition-all truncate flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
                         isPending
-                          ? 'bg-amber-50 text-amber-900 border-amber-300 ring-1 ring-amber-400/50'
-                          : `${categoryMeta.bgLight} ${categoryMeta.textClass} ${categoryMeta.borderClass} hover:brightness-95`
+                          ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/50'
+                          : `${categoryMeta.bgLight} ${categoryMeta.textClass} ${categoryMeta.borderClass} hover:brightness-95 dark:hover:brightness-110`
                       }`}
                       aria-label={`Event: ${event.title}, ${categoryMeta.label}${event.isMultiDay ? ', Multi-day event' : ''}${event.startTime ? `, from ${formatTime12h(event.startTime)} to ${formatTime12h(event.endTime)}` : ', All-day announcement'}${isPending ? ', Pending admin approval' : ''}`}
                     >
                       {/* Dot or Pending clock */}
                       {isPending ? (
-                        <Clock className="w-2.5 h-2.5 text-amber-600 shrink-0" aria-hidden="true" />
+                        <Clock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
                       ) : (
                         <span
                           className={`w-1.5 h-1.5 rounded-full shrink-0 ${categoryMeta.dotClass}`}
@@ -220,7 +222,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       {/* Multi-day Indicator */}
                       {(event.isMultiDay || (event.endDate && event.endDate > event.date)) && (
                         <CalendarRange
-                          className="w-2.5 h-2.5 opacity-75 shrink-0 text-indigo-500"
+                          className="w-2.5 h-2.5 opacity-75 shrink-0 text-indigo-500 dark:text-indigo-400"
                           aria-label="Multi-day event"
                         />
                       )}
@@ -228,7 +230,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       {/* Recurrence Indicator */}
                       {(event.isRecurring || event.recurringSeriesId) && (
                         <Repeat
-                          className="w-2.5 h-2.5 opacity-70 shrink-0 text-slate-500"
+                          className="w-2.5 h-2.5 opacity-70 shrink-0 text-slate-500 dark:text-slate-400"
                           aria-label={`Recurring event: ${event.recurrenceRule?.humanReadable || 'Series'}`}
                         />
                       )}
@@ -243,7 +245,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
                 {/* More events badge */}
                 {cell.events.length > 3 && (
-                  <div className="text-[10px] font-semibold text-slate-500 hover:text-indigo-600 px-1 pt-0.5">
+                  <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-1 pt-0.5">
                     +{cell.events.length - 3} more
                   </div>
                 )}
