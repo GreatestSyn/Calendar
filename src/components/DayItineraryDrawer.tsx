@@ -46,7 +46,7 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
   const dayEvents = events
     .filter((e) => {
       if (e.date === selectedDate) return true;
-      if (e.endDate && e.date <= selectedDate && e.endDate >= selectedDate) return true;
+      if (e.isMultiDay && e.endDate && e.date <= selectedDate && e.endDate >= selectedDate) return true;
       return false;
     })
     .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
@@ -138,7 +138,8 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
             dayEvents.map((event, index) => {
               const meta = CATEGORIES[event.category] || CATEGORIES.other;
               const isPending = event.status === 'pending';
-              const isEventMultiDay = Boolean(event.isMultiDay || (event.endDate && event.endDate > event.date));
+              const isEventMultiDay = Boolean(event.isMultiDay && event.endDate && event.endDate > event.date);
+              const isOvernight = Boolean(!event.isMultiDay && event.endDate && event.endDate > event.date);
               const totalDays = event.endDate ? calculateDaysBetween(event.date, event.endDate) : 1;
               const currentDayNumber = calculateDaysBetween(event.date, selectedDate);
 
@@ -179,7 +180,7 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
                         <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                         <span>
                           {event.startTime
-                            ? `${formatTime12h(event.startTime)} - ${formatTime12h(event.endTime)}`
+                            ? `${formatTime12h(event.startTime)} - ${formatTime12h(event.endTime)}${isOvernight ? ' (next day)' : ''}`
                             : (event.category === 'celebration' ? 'All Day Celebration' : 'Untimed')}
                         </span>
                       </div>

@@ -18,8 +18,9 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
 }) => {
   if (!event) return null;
 
+  const initialSpan = event.endDate ? calculateDaysBetween(event.date, event.endDate) : 1;
   const [newDate, setNewDate] = useState(event.date);
-  const [isMultiDay, setIsMultiDay] = useState(Boolean(event.isMultiDay || (event.endDate && event.endDate > event.date)));
+  const [isMultiDay, setIsMultiDay] = useState(initialSpan >= 3 ? true : (initialSpan === 2 ? Boolean(event.isMultiDay) : false));
   const [newEndDate, setNewEndDate] = useState(event.endDate || event.date);
   const [newStartTime, setNewStartTime] = useState(event.startTime);
   const [newEndTime, setNewEndTime] = useState(event.endTime);
@@ -30,17 +31,41 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (isMultiDay && newEndDate < newDate) {
+
+    const trimmedDate = newDate.trim();
+    const trimmedEndDate = (newEndDate && newEndDate.trim()) || trimmedDate;
+
+    if (trimmedEndDate < trimmedDate) {
       setError('End Date cannot be earlier than Start Date.');
       return;
     }
 
+    const span = calculateDaysBetween(trimmedDate, trimmedEndDate);
+
+    if (newStartTime && newEndTime) {
+      if (trimmedEndDate === trimmedDate) {
+        if (newStartTime >= newEndTime) {
+          setError('Start Time must be strictly earlier than End Time for same-day events.');
+          return;
+        }
+      } else {
+        const startDt = new Date(`${trimmedDate}T${newStartTime}`);
+        const endDt = new Date(`${trimmedEndDate}T${newEndTime}`);
+        if (endDt <= startDt) {
+          setError('End date and time must be strictly after start date and time.');
+          return;
+        }
+      }
+    }
+
+    const effectiveIsMultiDay = span >= 3 ? true : (span === 2 ? isMultiDay : false);
+
     setSaving(true);
     try {
       await onSave(event.id, {
-        date: newDate,
-        endDate: isMultiDay && newEndDate > newDate ? newEndDate : undefined,
-        isMultiDay: Boolean(isMultiDay && newEndDate > newDate),
+        date: trimmedDate,
+        endDate: trimmedEndDate,
+        isMultiDay: effectiveIsMultiDay,
         startTime: newStartTime,
         endTime: newEndTime,
         location: newLocation,
@@ -111,55 +136,64 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
             {event.startTime ? ` from ${event.startTime} to ${event.endTime}` : ' (All Day / Untimed)'}
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block font-semibold text-slate-700 dark:text-slate-300">
-                {isMultiDay ? 'New Start Date *' : 'New Date *'}
-              </label>
-              <label className="inline-flex items-center gap-1 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isMultiDay}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setIsMultiDay(checked);
-                    if (checked && (!newEndDate || newEndDate < newDate)) {
-                      setNewEndDate(newDate);
-                    }
-                  }}
-                  className="w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Multi-day event</span>
-              </label>
-            </div>
-            <input
-              type="date"
-              required
-              value={newDate}
-              onChange={(e) => {
-                const updatedStart = e.target.value;
-                setNewDate(updatedStart);
-                if (isMultiDay && newEndDate < updatedStart) {
-                  setNewEndDate(updatedStart);
-                }
-              }}
-              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-            />
-          </div>
-
-          {isMultiDay && (
-            <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl space-y-2 animate-in fade-in duration-150">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
-                  <CalendarRange className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  New Multi-day Event Range
-                </span>
-                <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.5 rounded">
+          {/* Schedule Section */}
+          <div className="space-y-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+                <CalendarClock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                New Schedule & Timing
+              </span>
+              {calculateDaysBetween(newDate, newEndDate) > 1 && (
+                <span className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950/60 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
                   {calculateDaysBetween(newDate, newEndDate)} days total
                 </span>
-              </div>
+              )}
+            </div>
+
+            {/* Start Date & Start Time Side-by-Side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-medium text-indigo-900 dark:text-indigo-300 mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  New Start Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={newDate}
+                  onChange={(e) => {
+                    const updatedStart = e.target.value;
+                    setNewDate(updatedStart);
+                    if (!newEndDate || newEndDate < updatedStart || newEndDate === newDate) {
+                      setNewEndDate(updatedStart);
+                      setIsMultiDay(false);
+                    } else {
+                      const newSpan = calculateDaysBetween(updatedStart, newEndDate);
+                      if (newSpan >= 3) setIsMultiDay(true);
+                      else if (newSpan <= 1) setIsMultiDay(false);
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  New Start Time *
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={newStartTime}
+                  onChange={(e) => setNewStartTime(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* End Date & End Time Side-by-Side */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   New End Date *
                 </label>
                 <input
@@ -167,38 +201,71 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
                   required
                   min={newDate}
                   value={newEndDate}
-                  onChange={(e) => setNewEndDate(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    const updatedEnd = e.target.value;
+                    setNewEndDate(updatedEnd);
+                    const newSpan = calculateDaysBetween(newDate, updatedEnd);
+                    if (newSpan >= 3) setIsMultiDay(true);
+                    else if (newSpan <= 1) setIsMultiDay(false);
+                  }}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  New End Time *
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={newEndTime}
+                  onChange={(e) => setNewEndTime(e.target.value)}
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
             </div>
-          )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                New Start Time *
-              </label>
-              <input
-                type="time"
-                required
-                value={newStartTime}
-                onChange={(e) => setNewStartTime(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                New End Time *
-              </label>
-              <input
-                type="time"
-                required
-                value={newEndTime}
-                onChange={(e) => setNewEndTime(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              />
-            </div>
+            {/* Multi-day Setting for Spans >= 2 */}
+            {calculateDaysBetween(newDate, newEndDate) >= 2 && (
+              <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl space-y-1.5 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                    <CalendarRange className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    Multi-day Event Setting
+                  </span>
+                  <span className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.5 rounded">
+                    {calculateDaysBetween(newDate, newEndDate) >= 3 ? 'Required for 3+ Days' : 'Optional for 2 Days'}
+                  </span>
+                </div>
+
+                <label className="flex items-start gap-2 cursor-pointer select-none pt-1">
+                  <input
+                    type="checkbox"
+                    checked={calculateDaysBetween(newDate, newEndDate) >= 3 ? true : isMultiDay}
+                    disabled={calculateDaysBetween(newDate, newEndDate) >= 3}
+                    onChange={(e) => {
+                      if (calculateDaysBetween(newDate, newEndDate) === 2) {
+                        setIsMultiDay(e.target.checked);
+                      }
+                    }}
+                    className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 disabled:opacity-60"
+                  />
+                  <div className="text-xs">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      Post as multi-day event spanning all {calculateDaysBetween(newDate, newEndDate)} days
+                    </span>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      {calculateDaysBetween(newDate, newEndDate) >= 3
+                        ? 'Required: Events spanning 3 or more calendar days are posted across every date with multi-day annotations.'
+                        : isMultiDay
+                        ? 'Checked: Will display across both days on the calendar with "Day 1 of 2" and "Day 2 of 2" indicators.'
+                        : 'Unchecked: Will be posted only to the first day at its start time (e.g., overnight 10:00 PM – 2:00 AM).'}
+                    </p>
+                  </div>
+                </label>
+              </div>
+            )}
           </div>
 
           <div>

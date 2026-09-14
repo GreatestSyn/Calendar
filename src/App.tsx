@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CalendarEvent, EventCategory, AdminNotification, RealtimeMessage } from './types';
-import { INITIAL_EVENTS, CATEGORIES, formatTime12h, formatDatePretty } from './constants';
+import { INITIAL_EVENTS, CATEGORIES, formatTime12h, formatDatePretty, formatEventDateRange } from './constants';
 import {
   fetchEvents,
   subscribeToRealtimeEvents,
@@ -416,13 +416,13 @@ function CalendarAppContent() {
         const monthEndStr = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
         const inMonth =
           (evt.date >= monthStartStr && evt.date <= monthEndStr) ||
-          (evt.endDate && evt.date <= monthEndStr && evt.endDate >= monthStartStr);
+          (evt.isMultiDay && evt.endDate && evt.date <= monthEndStr && evt.endDate >= monthStartStr);
         if (!inMonth) return false;
       } else if (timeframe === 'upcoming') {
-        const isUpcoming = evt.date >= todayStr || (evt.endDate && evt.endDate >= todayStr);
+        const isUpcoming = evt.date >= todayStr || (evt.isMultiDay && evt.endDate && evt.endDate >= todayStr);
         if (!isUpcoming) return false;
       } else if (timeframe === 'past') {
-        const effectiveEnd = evt.endDate || evt.date;
+        const effectiveEnd = (evt.isMultiDay && evt.endDate) || evt.date;
         if (effectiveEnd >= todayStr) return false;
       }
 
@@ -610,12 +610,14 @@ function CalendarAppContent() {
 
                       <div className="flex flex-col sm:items-end text-xs text-slate-500 dark:text-slate-400 shrink-0 gap-1.5">
                         <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {formatDatePretty(evt.date)}
+                          {(evt.isMultiDay && evt.endDate && evt.endDate > evt.date)
+                            ? formatEventDateRange(evt.date, evt.endDate)
+                            : formatDatePretty(evt.date)}
                         </span>
                         <span className="inline-flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                           {evt.startTime
-                            ? `${formatTime12h(evt.startTime)}${evt.endTime ? ` - ${formatTime12h(evt.endTime)}` : ''}`
+                            ? `${formatTime12h(evt.startTime)}${evt.endTime ? ` - ${formatTime12h(evt.endTime)}` : ''}${!evt.isMultiDay && evt.endDate && evt.endDate > evt.date ? ' (next day)' : ''}`
                             : (evt.category === 'celebration' ? 'All Day Celebration' : 'Untimed')}
                         </span>
                         {evt.location && (

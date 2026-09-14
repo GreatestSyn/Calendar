@@ -33,7 +33,7 @@ export const MonthEventsSidebar: React.FC<MonthEventsSidebarProps> = ({
   const monthEvents = events
     .filter((e) => {
       if (e.date >= monthStartStr && e.date <= monthEndStr) return true;
-      if (e.endDate && e.date <= monthEndStr && e.endDate >= monthStartStr) return true;
+      if (e.isMultiDay && e.endDate && e.date <= monthEndStr && e.endDate >= monthStartStr) return true;
       return false;
     })
     .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime || '').localeCompare(b.startTime || ''));
@@ -185,12 +185,16 @@ export const MonthEventsSidebar: React.FC<MonthEventsSidebarProps> = ({
                       className="font-medium hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline inline-flex items-center gap-1 text-left"
                       title="View day itinerary"
                     >
-                      {(evt.isMultiDay || (evt.endDate && evt.endDate > evt.date)) ? (
+                      {(evt.isMultiDay && evt.endDate && evt.endDate > evt.date) ? (
                         <CalendarRange className="w-3 h-3 text-indigo-500 dark:text-indigo-400 shrink-0" />
                       ) : (
                         <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
                       )}
-                      <span>{formatEventDateRange(evt.date, evt.endDate)}</span>
+                      <span>
+                        {(evt.isMultiDay && evt.endDate && evt.endDate > evt.date)
+                          ? formatEventDateRange(evt.date, evt.endDate)
+                          : formatDatePretty(evt.date)}
+                      </span>
                     </button>
                     <span className="inline-flex items-center gap-1 shrink-0">
                       <Clock className="w-3 h-3 text-slate-400" />

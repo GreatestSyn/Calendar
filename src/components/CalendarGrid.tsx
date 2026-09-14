@@ -13,7 +13,7 @@ interface CalendarGridProps {
 
 const isEventOnDate = (e: CalendarEvent, dateStr: string): boolean => {
   if (e.date === dateStr) return true;
-  if (e.endDate && e.date <= dateStr && e.endDate >= dateStr) return true;
+  if (e.isMultiDay && e.endDate && e.date <= dateStr && e.endDate >= dateStr) return true;
   return false;
 };
 
@@ -196,13 +196,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                         e.stopPropagation();
                         onSelectEvent(event);
                       }}
-                      title={`${event.title}${event.isMultiDay ? ' (Multi-day)' : ''}${event.startTime ? ` (${formatTime12h(event.startTime)})` : ' (All Day)'} - Click for full details`}
+                      title={`${event.title}${event.isMultiDay && event.endDate && event.endDate > event.date ? ' (Multi-day)' : (!event.isMultiDay && event.endDate && event.endDate > event.date ? ' (Overnight)' : '')}${event.startTime ? ` (${formatTime12h(event.startTime)})` : ' (All Day)'} - Click for full details`}
                       className={`group w-full text-left text-[11px] leading-tight px-1.5 py-1 rounded-md border transition-all truncate flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
                         isPending
                           ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/50'
                           : `${categoryMeta.bgLight} ${categoryMeta.textClass} ${categoryMeta.borderClass} hover:brightness-95 dark:hover:brightness-110`
                       }`}
-                      aria-label={`Event: ${event.title}, ${categoryMeta.label}${event.isMultiDay ? ', Multi-day event' : ''}${event.startTime ? `, from ${formatTime12h(event.startTime)} to ${formatTime12h(event.endTime)}` : ', All-day announcement'}${isPending ? ', Pending admin approval' : ''}`}
+                      aria-label={`Event: ${event.title}, ${categoryMeta.label}${event.isMultiDay && event.endDate && event.endDate > event.date ? ', Multi-day event' : ''}${event.startTime ? `, from ${formatTime12h(event.startTime)} to ${formatTime12h(event.endTime)}` : ', All-day announcement'}${isPending ? ', Pending admin approval' : ''}`}
                     >
                       {/* Dot or Pending clock */}
                       {isPending ? (
@@ -220,7 +220,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       </span>
 
                       {/* Multi-day Indicator */}
-                      {(event.isMultiDay || (event.endDate && event.endDate > event.date)) && (
+                      {Boolean(event.isMultiDay && event.endDate && event.endDate > event.date) && (
                         <CalendarRange
                           className="w-2.5 h-2.5 opacity-75 shrink-0 text-indigo-500 dark:text-indigo-400"
                           aria-label="Multi-day event"
@@ -237,7 +237,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
 
                       {/* Small Time Badge on Larger Screens */}
                       <span className="hidden xl:inline text-[9px] opacity-75 font-normal shrink-0">
-                        {event.startTime || (event.isMultiDay ? 'Multi-day' : 'All Day')}
+                        {event.startTime
+                          ? `${event.startTime}${!event.isMultiDay && event.endDate && event.endDate > event.date ? ' (+1d)' : ''}`
+                          : (event.isMultiDay && event.endDate && event.endDate > event.date ? 'Multi-day' : 'All Day')}
                       </span>
                     </button>
                   );

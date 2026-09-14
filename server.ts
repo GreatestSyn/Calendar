@@ -982,7 +982,14 @@ async function startServer() {
             });
           }
           endDate = trimmedEnd;
-          isMultiDay = endDate > trimmedDate;
+          const spanDays = calculateDaysBetween(trimmedDate, endDate);
+          if (spanDays >= 3) {
+            isMultiDay = true;
+          } else if (spanDays === 2) {
+            isMultiDay = Boolean(rawIsMultiDay);
+          } else {
+            isMultiDay = false;
+          }
         }
       } else if (rawIsMultiDay) {
         isMultiDay = Boolean(rawIsMultiDay);
@@ -1141,15 +1148,32 @@ async function startServer() {
         });
       }
 
+      const effectiveStartTime = typeof startTime === 'string' ? startTime.trim() : (isCelebration ? '' : '09:00');
+      const effectiveEndTime = typeof endTime === 'string' ? endTime.trim() : (isCelebration ? '' : '10:00');
+
+      if (effectiveStartTime && effectiveEndTime) {
+        if (endDate && endDate > trimmedDate) {
+          const startDt = new Date(`${trimmedDate}T${effectiveStartTime}`);
+          const endDt = new Date(`${endDate}T${effectiveEndTime}`);
+          if (endDt <= startDt) {
+            return res.status(400).json({ error: 'End date and time must be strictly after start date and time.' });
+          }
+        } else {
+          if (!isCelebration && effectiveStartTime >= effectiveEndTime) {
+            return res.status(400).json({ error: 'Start time must be strictly earlier than end time for same-day events.' });
+          }
+        }
+      }
+
       const newEvent: CalendarEvent = {
         id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         title: trimmedTitle,
         category,
         date: trimmedDate,
-        endDate: isMultiDay ? endDate : undefined,
+        endDate: endDate || undefined,
         isMultiDay,
-        startTime: typeof startTime === 'string' ? startTime.trim() : (isCelebration ? '' : '09:00'),
-        endTime: typeof endTime === 'string' ? endTime.trim() : (isCelebration ? '' : '10:00'),
+        startTime: effectiveStartTime,
+        endTime: effectiveEndTime,
         status: 'pending',
         submitterName: trimmedName || (isCelebration ? 'Celebration Announcement' : 'Community Member'),
         submitterEmail: trimmedHandle || (isCelebration ? '@community' : '@member'),
@@ -1451,12 +1475,33 @@ async function startServer() {
     if (req.body.endDate !== undefined) {
       const trimmedEnd = String(req.body.endDate).trim();
       updated.endDate = trimmedEnd || undefined;
-      updated.isMultiDay = Boolean(updated.endDate && updated.endDate > updated.date);
-    } else if (req.body.isMultiDay !== undefined && !updated.endDate) {
-      updated.isMultiDay = Boolean(req.body.isMultiDay);
     }
     if (updated.endDate && updated.endDate < updated.date) {
       return res.status(400).json({ error: 'End date cannot be earlier than start date.' });
+    }
+    const spanDays = updated.endDate ? calculateDaysBetween(updated.date, updated.endDate) : 1;
+    if (spanDays >= 3) {
+      updated.isMultiDay = true;
+    } else if (spanDays === 2) {
+      if (req.body.isMultiDay !== undefined) {
+        updated.isMultiDay = Boolean(req.body.isMultiDay);
+      }
+    } else {
+      updated.isMultiDay = false;
+    }
+
+    if (updated.startTime && updated.endTime) {
+      if (updated.endDate && updated.endDate > updated.date) {
+        const startDt = new Date(`${updated.date}T${updated.startTime}`);
+        const endDt = new Date(`${updated.endDate}T${updated.endTime}`);
+        if (endDt <= startDt) {
+          return res.status(400).json({ error: 'End date and time must be strictly after start date and time.' });
+        }
+      } else {
+        if (updated.category !== 'celebration' && updated.startTime >= updated.endTime) {
+          return res.status(400).json({ error: 'Start time must be strictly earlier than end time for same-day events.' });
+        }
+      }
     }
 
     const dateChanged =

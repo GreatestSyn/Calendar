@@ -111,8 +111,9 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       setEditTitle(event.title || '');
       setEditCategory(event.category || 'SAKK Event');
       setEditDate(event.date || '');
-      setEditIsMultiDay(Boolean(event.isMultiDay || (event.endDate && event.endDate > event.date)));
       setEditEndDate(event.endDate || event.date || '');
+      const eventSpan = event.endDate ? calculateDaysBetween(event.date, event.endDate) : 1;
+      setEditIsMultiDay(eventSpan >= 3 ? true : (eventSpan === 2 ? Boolean(event.isMultiDay) : false));
       setEditStartTime(event.startTime || '09:00');
       setEditEndTime(event.endTime || '10:00');
       setEditLocation(event.location || '');
@@ -161,23 +162,51 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       return null;
     }
 
+    const trimmedEndDate = (editEndDate && editEndDate.trim()) || trimmedDate;
+
+    if (trimmedEndDate < trimmedDate) {
+      setEditError('End Date cannot be earlier than Start Date.');
+      return null;
+    }
+
+    const editSpanDays = calculateDaysBetween(trimmedDate, trimmedEndDate);
     const isCelebration = editCategory === 'celebration';
 
     if (isCelebration) {
       // For celebration events, only title, category, and date are required.
-      // Other fields are optional. If both times are provided, validate start < end.
-      if (editStartTime && editEndTime && editStartTime >= editEndTime) {
-        setEditError('Start time must be strictly before end time.');
-        return null;
+      // If both times are provided, validate cross-day timestamp
+      if (editStartTime && editEndTime) {
+        if (trimmedEndDate === trimmedDate) {
+          if (editStartTime >= editEndTime) {
+            setEditError('Start time must be strictly before end time for same-day events.');
+            return null;
+          }
+        } else {
+          const startDt = new Date(`${trimmedDate}T${editStartTime}`);
+          const endDt = new Date(`${trimmedEndDate}T${editEndTime}`);
+          if (endDt <= startDt) {
+            setEditError('End date and time must be strictly after start date and time.');
+            return null;
+          }
+        }
       }
     } else {
       if (!editStartTime || !editEndTime) {
         setEditError('Start and End times are required.');
         return null;
       }
-      if (editStartTime >= editEndTime) {
-        setEditError('Start time must be strictly before end time.');
-        return null;
+      if (trimmedEndDate === trimmedDate) {
+        if (editStartTime >= editEndTime) {
+          setEditError('Start time must be strictly before end time for same-day events.');
+          return null;
+        }
+      } else {
+        const startDt = new Date(`${trimmedDate}T${editStartTime}`);
+        const endDt = new Date(`${trimmedEndDate}T${editEndTime}`);
+        if (endDt <= startDt) {
+          setEditError('End date and time must be strictly after start date and time.');
+          return null;
+        }
       }
       if (!trimmedLocation) {
         setEditError('Location or Virtual Meeting Link is required.');
@@ -197,22 +226,19 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       }
     }
 
-    if (editIsMultiDay && editEndDate && editEndDate < trimmedDate) {
-      setEditError('End Date cannot be earlier than Start Date.');
-      return null;
-    }
-
     if (trimmedHandle && !trimmedHandle.startsWith('@') && !trimmedHandle.includes('@')) {
       trimmedHandle = `@${trimmedHandle}`;
     }
+
+    const effectiveIsMultiDay = editSpanDays >= 3 ? true : (editSpanDays === 2 ? editIsMultiDay : false);
 
     setEditError(null);
     return {
       title: trimmedTitle,
       category: editCategory,
       date: trimmedDate,
-      endDate: editIsMultiDay && editEndDate > trimmedDate ? editEndDate : undefined,
-      isMultiDay: Boolean(editIsMultiDay && editEndDate > trimmedDate),
+      endDate: trimmedEndDate,
+      isMultiDay: effectiveIsMultiDay,
       startTime: editStartTime.trim(),
       endTime: editEndTime.trim(),
       location: trimmedLocation || (isCelebration ? 'Celebration Announcement' : ''),
@@ -277,6 +303,9 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     setEditTitle(event.title || '');
     setEditCategory(event.category || 'SAKK Event');
     setEditDate(event.date || '');
+    setEditEndDate(event.endDate || event.date || '');
+    const span = event.endDate ? calculateDaysBetween(event.date, event.endDate) : 1;
+    setEditIsMultiDay(span >= 3 ? true : (span === 2 ? Boolean(event.isMultiDay) : false));
     setEditStartTime(event.startTime || '09:00');
     setEditEndTime(event.endTime || '10:00');
     setEditLocation(event.location || '');
@@ -399,13 +428,18 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 </span>
               )}
 
-              {/* Multi-day Badge */}
-              {Boolean(event.isMultiDay || (event.endDate && event.endDate > event.date)) && (
+              {/* Multi-day / Overnight Badge */}
+              {Boolean(event.isMultiDay && event.endDate && event.endDate > event.date) ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-indigo-100 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-800">
                   <CalendarRange className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                   Multi-day ({calculateDaysBetween(event.date, event.endDate)} days)
                 </span>
-              )}
+              ) : (Boolean(!event.isMultiDay && event.endDate && event.endDate > event.date) && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                  <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  Overnight (ends {formatDatePretty(event.endDate)})
+                </span>
+              ))}
 
               {/* Recurring Badge */}
               {Boolean(event.isRecurring || event.recurringSeriesId) && (
@@ -562,38 +596,39 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 </div>
               </div>
 
-              {/* Date, Multi-day toggle, Start Time, End Time */}
+              {/* Date & Time Schedule Section */}
               <div className="space-y-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-700">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    Date & Time Schedule
+                  </span>
+                  {calculateDaysBetween(editDate, editEndDate) > 1 && (
+                    <span className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950/60 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                      {calculateDaysBetween(editDate, editEndDate)} days total
+                    </span>
+                  )}
+                </div>
+
+                {/* Start Date & Start Time Side-by-Side */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                        {editIsMultiDay ? 'Start Date' : 'Date'} <span className="text-rose-500">*</span>
-                      </label>
-                      <label className="inline-flex items-center gap-1 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={editIsMultiDay}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setEditIsMultiDay(checked);
-                            if (checked && (!editEndDate || editEndDate < editDate)) {
-                              setEditEndDate(editDate);
-                            }
-                          }}
-                          className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Multi-day</span>
-                      </label>
-                    </div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-1">
+                      Start Date <span className="text-rose-500">*</span>
+                    </label>
                     <input
                       type="date"
                       value={editDate}
                       onChange={(e) => {
                         const newStart = e.target.value;
                         setEditDate(newStart);
-                        if (editIsMultiDay && editEndDate < newStart) {
+                        if (!editEndDate || editEndDate < newStart || editEndDate === editDate) {
                           setEditEndDate(newStart);
+                          setEditIsMultiDay(false);
+                        } else {
+                          const newSpan = calculateDaysBetween(newStart, editEndDate);
+                          if (newSpan >= 3) setEditIsMultiDay(true);
+                          else if (newSpan <= 1) setEditIsMultiDay(false);
                         }
                       }}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -601,31 +636,6 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                     />
                   </div>
 
-                  {editIsMultiDay ? (
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-                          End Date <span className="text-rose-500">*</span>
-                        </label>
-                        <span className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
-                          {calculateDaysBetween(editDate, editEndDate)} days
-                        </span>
-                      </div>
-                      <input
-                        type="date"
-                        min={editDate}
-                        value={editEndDate}
-                        onChange={(e) => setEditEndDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                        required
-                      />
-                    </div>
-                  ) : (
-                    <div />
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 border-t border-slate-200 dark:border-slate-700">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-1">
                       Start Time {editCategory === 'celebration' ? <span className="text-slate-400 font-normal">(Optional)</span> : <span className="text-rose-500">*</span>}
@@ -636,6 +646,29 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                       onChange={(e) => setEditStartTime(e.target.value)}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                       required={editCategory !== 'celebration'}
+                    />
+                  </div>
+                </div>
+
+                {/* End Date & End Time Side-by-Side */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-1">
+                      End Date <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      min={editDate}
+                      value={editEndDate}
+                      onChange={(e) => {
+                        const newEnd = e.target.value;
+                        setEditEndDate(newEnd);
+                        const newSpan = calculateDaysBetween(editDate, newEnd);
+                        if (newSpan >= 3) setEditIsMultiDay(true);
+                        else if (newSpan <= 1) setEditIsMultiDay(false);
+                      }}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      required
                     />
                   </div>
 
@@ -652,6 +685,47 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                     />
                   </div>
                 </div>
+
+                {/* Multi-day Setting for Spans >= 2 */}
+                {calculateDaysBetween(editDate, editEndDate) >= 2 && (
+                  <div className="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl space-y-1.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                        <CalendarRange className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                        Multi-day Event Setting
+                      </span>
+                      <span className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100/90 dark:bg-indigo-900/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
+                        {calculateDaysBetween(editDate, editEndDate) >= 3 ? 'Required for 3+ Days' : 'Optional for 2 Days'}
+                      </span>
+                    </div>
+
+                    <label className="flex items-start gap-2 cursor-pointer select-none pt-1">
+                      <input
+                        type="checkbox"
+                        checked={calculateDaysBetween(editDate, editEndDate) >= 3 ? true : editIsMultiDay}
+                        disabled={calculateDaysBetween(editDate, editEndDate) >= 3}
+                        onChange={(e) => {
+                          if (calculateDaysBetween(editDate, editEndDate) === 2) {
+                            setEditIsMultiDay(e.target.checked);
+                          }
+                        }}
+                        className="mt-0.5 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-60"
+                      />
+                      <div className="text-xs">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          Post as multi-day event spanning all {calculateDaysBetween(editDate, editEndDate)} days
+                        </span>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          {calculateDaysBetween(editDate, editEndDate) >= 3
+                            ? 'Required: Events spanning 3 or more calendar days are posted across every date with multi-day annotations.'
+                            : editIsMultiDay
+                            ? 'Checked: Will display across both days on the calendar with "Day 1 of 2" and "Day 2 of 2" indicators.'
+                            : 'Unchecked: Will be posted only to the first day at its start time (e.g., overnight 10:00 PM – 2:00 AM).'}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )}
               </div>
 
               {/* Event Description */}
@@ -877,7 +951,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 text-xs">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/70 flex items-center justify-center text-indigo-700 dark:text-indigo-400 shrink-0">
-                    {(event.isMultiDay || (event.endDate && event.endDate > event.date)) ? (
+                    {(event.isMultiDay && event.endDate && event.endDate > event.date) ? (
                       <CalendarRange className="w-4 h-4" />
                     ) : (
                       <Calendar className="w-4 h-4" />
@@ -885,9 +959,13 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                   </div>
                   <div>
                     <div className="text-slate-500 dark:text-slate-400 font-medium">
-                      Scheduled Date{(event.isMultiDay || (event.endDate && event.endDate > event.date)) ? ' Range' : ''}
+                      Scheduled Date{(event.isMultiDay && event.endDate && event.endDate > event.date) ? ' Range' : ''}
                     </div>
-                    <div className="font-bold text-slate-900 dark:text-slate-100">{formatEventDateRange(event.date, event.endDate)}</div>
+                    <div className="font-bold text-slate-900 dark:text-slate-100">
+                      {(event.isMultiDay && event.endDate && event.endDate > event.date)
+                        ? formatEventDateRange(event.date, event.endDate)
+                        : formatDatePretty(event.date)}
+                    </div>
                   </div>
                 </div>
 
@@ -899,7 +977,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                     <div className="text-slate-500 dark:text-slate-400 font-medium">Time Window</div>
                     <div className="font-bold text-slate-900 dark:text-slate-100">
                       {event.startTime
-                        ? `${formatTime12h(event.startTime)}${event.endTime ? ` - ${formatTime12h(event.endTime)}` : ''}`
+                        ? `${formatTime12h(event.startTime)}${event.endTime ? ` - ${formatTime12h(event.endTime)}` : ''}${!event.isMultiDay && event.endDate && event.endDate > event.date ? ` (ends ${formatDatePretty(event.endDate)})` : ''}`
                         : (event.category === 'celebration' ? 'All Day / Celebration Announcement' : 'Untimed Event')}
                     </div>
                   </div>
