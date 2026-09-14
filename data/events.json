@@ -151,5 +151,33 @@
     },
     "approvedAt": "2026-09-14T15:35:30.002Z",
     "approvedBy": "Administrator"
+  },
+  {
+    "id": "evt-1789428579132-4vi1z",
+    "title": "test",
+    "category": "Member EVent (21+)",
+    "date": "2026-09-14",
+    "endDate": "2026-09-15",
+    "isMultiDay": false,
+    "startTime": "22:00",
+    "endTime": "08:00",
+    "status": "approved",
+    "submitterName": "syn",
+    "submitterEmail": "@GreatestSyn",
+    "location": "test",
+    "description": "test",
+    "expectedAttendees": "",
+    "equipmentNeeds": "",
+    "submittedAt": "2026-09-14T23:29:39.132Z",
+    "source": "direct_submission",
+    "telegramNotified": true,
+    "telegramDestination": {
+      "chatId": "-1003819617733",
+      "topicId": "9",
+      "type": "approval",
+      "timestamp": "2026-09-14T23:30:09.599Z"
+    },
+    "approvedAt": "2026-09-14T23:30:08.656Z",
+    "approvedBy": "Administrator"
   }
 ]

@@ -10,3 +10,4 @@ coverage/
 caddy.exe
 data/backups/
 data/*.tmp
+/data

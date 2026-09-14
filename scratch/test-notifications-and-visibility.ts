@@ -197,3 +197,4 @@ try {
     fs.writeFileSync(NOTIFS_FILE, '[]', 'utf-8');
   }
 }
+
