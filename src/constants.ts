@@ -124,4 +124,35 @@ export function formatEventDateRange(startDateStr: string, endDateStr?: string, 
   return `${formatDatePretty(startDateStr)} – ${formatDatePretty(endDateStr)} (${days} days)`;
 }
 
+export function getVisibleGridDateRange(currentMonthDate: Date): { startStr: string; endStr: string } {
+  const year = currentMonthDate.getFullYear();
+  const month = currentMonthDate.getMonth(); // 0-indexed
+
+  const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Sun
+  const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+  const totalDaysInPrevMonth = new Date(year, month, 0).getDate();
+
+  // Previous month padding days
+  let startStr: string;
+  if (firstDayOfMonth > 0) {
+    const prevMonthDay = totalDaysInPrevMonth - firstDayOfMonth + 1;
+    const prevMonthDate = new Date(year, month - 1, prevMonthDay);
+    startStr = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}-${String(prevMonthDate.getDate()).padStart(2, '0')}`;
+  } else {
+    startStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  }
+
+  // Next month padding days to complete full 7-column rows
+  const remainingCells = (7 - ((firstDayOfMonth + totalDaysInMonth) % 7)) % 7;
+  let endStr: string;
+  if (remainingCells > 0) {
+    const nextMonthDate = new Date(year, month + 1, remainingCells);
+    endStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-${String(nextMonthDate.getDate()).padStart(2, '0')}`;
+  } else {
+    endStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(totalDaysInMonth).padStart(2, '0')}`;
+  }
+
+  return { startStr, endStr };
+}
+
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CalendarEvent, EventCategory, AdminNotification, RealtimeMessage } from './types';
-import { INITIAL_EVENTS, CATEGORIES, formatTime12h, formatDatePretty, formatEventDateRange } from './constants';
+import { INITIAL_EVENTS, CATEGORIES, formatTime12h, formatDatePretty, formatEventDateRange, getVisibleGridDateRange } from './constants';
 import {
   fetchEvents,
   subscribeToRealtimeEvents,
@@ -397,7 +397,8 @@ function CalendarAppContent() {
 
   // Filtered events calculation
   const filteredEvents = useMemo(() => {
-    const todayStr = '2026-09-13';
+    const todayObj = new Date();
+    const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
     const curYear = currentMonthDate.getFullYear();
     const curMonth = currentMonthDate.getMonth() + 1;
     const curMonthPrefix = `${curYear}-${String(curMonth).padStart(2, '0')}`;
@@ -431,15 +432,13 @@ function CalendarAppContent() {
         return false;
       }
 
-      // 4. Timeframe Filter (accounts for multi-day spans)
+      // 4. Timeframe Filter (accounts for multi-day spans and all visible days on the active calendar grid page)
       if (timeframe === 'this_month') {
-        const lastDayOfMonth = new Date(curYear, curMonth, 0).getDate();
-        const monthStartStr = `${curYear}-${String(curMonth).padStart(2, '0')}-01`;
-        const monthEndStr = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
-        const inMonth =
-          (evt.date >= monthStartStr && evt.date <= monthEndStr) ||
-          (evt.isMultiDay && evt.endDate && evt.date <= monthEndStr && evt.endDate >= monthStartStr);
-        if (!inMonth) return false;
+        const { startStr: gridStartStr, endStr: gridEndStr } = getVisibleGridDateRange(currentMonthDate);
+        const inVisibleGrid =
+          (evt.date >= gridStartStr && evt.date <= gridEndStr) ||
+          (evt.isMultiDay && evt.endDate && evt.date <= gridEndStr && evt.endDate >= gridStartStr);
+        if (!inVisibleGrid) return false;
       } else if (timeframe === 'upcoming') {
         const isUpcoming = evt.date >= todayStr || (evt.isMultiDay && evt.endDate && evt.endDate >= todayStr);
         if (!isUpcoming) return false;
@@ -598,13 +597,21 @@ function CalendarAppContent() {
                 {filteredEvents.map((evt) => {
                   const meta = CATEGORIES[evt.category] || CATEGORIES.other;
                   const isPending = evt.status === 'pending';
+                  const curMonthPrefix = `${currentMonthDate.getFullYear()}-${String(currentMonthDate.getMonth() + 1).padStart(2, '0')}`;
+                  const todayObj = new Date();
+                  const todayDateStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+                  const isOutOfMonth = !evt.date.startsWith(curMonthPrefix);
+                  const isPassed = (evt.endDate || evt.date) < todayDateStr;
+                  const isDull = isOutOfMonth || isPassed;
 
                   return (
                     <article
                       key={evt.id}
                       role="listitem"
                       onClick={() => setSelectedEvent(evt)}
-                      className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/60 px-3 rounded-lg transition-colors cursor-pointer"
+                      className={`py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-slate-800/60 px-3 rounded-lg transition-all cursor-pointer ${
+                        isDull ? 'opacity-65 saturate-50 hover:opacity-100 hover:saturate-100' : ''
+                      }`}
                     >
                       <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">

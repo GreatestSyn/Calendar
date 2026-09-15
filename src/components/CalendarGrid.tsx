@@ -45,6 +45,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   // Today in YYYY-MM-DD
   const todayObj = new Date();
   const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+  const nowTimeStr = `${String(todayObj.getHours()).padStart(2, '0')}:${String(todayObj.getMinutes()).padStart(2, '0')}`;
 
   // Build grid days
   const gridCells: {
@@ -186,6 +187,16 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 {cell.events.slice(0, 3).map((event) => {
                   const categoryMeta = CATEGORIES[event.category] || CATEGORIES.other;
                   const isPending = event.status === 'pending';
+                  const isOutOfMonth = !cell.isCurrentMonth;
+                  const isPassed = (() => {
+                    if (cell.dateStr < todayStr) return true;
+                    if (cell.dateStr === todayStr && event.endTime) {
+                      if (event.endDate && event.endDate > event.date) return false;
+                      return event.endTime < nowTimeStr;
+                    }
+                    return false;
+                  })();
+                  const isDull = isOutOfMonth || isPassed;
 
                   return (
                     <button
@@ -196,33 +207,37 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                         e.stopPropagation();
                         onSelectEvent(event);
                       }}
-                      title={`${event.title}${event.isMultiDay && event.endDate && event.endDate > event.date ? ' (Multi-day)' : (!event.isMultiDay && event.endDate && event.endDate > event.date ? ' (Overnight)' : '')}${event.startTime ? ` (${formatTime12h(event.startTime)})` : ' (All Day)'} - Click for full details`}
+                      title={`${event.title}${isOutOfMonth ? ' (Outside active month)' : ''}${isPassed ? ' (Past)' : ''}${event.isMultiDay && event.endDate && event.endDate > event.date ? ' (Multi-day)' : (!event.isMultiDay && event.endDate && event.endDate > event.date ? ' (Overnight)' : '')}${event.startTime ? ` (${formatTime12h(event.startTime)})` : ' (All Day)'} - Click for full details`}
                       className={`group w-full text-left text-[11px] leading-tight px-1.5 py-1 rounded-md border transition-all truncate flex items-center gap-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
                         isPending
-                          ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/50'
+                          ? `bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-400/50 ${
+                              isDull ? 'opacity-65 saturate-50 bg-amber-50/40 dark:bg-amber-950/20 text-amber-800/80 dark:text-amber-300/70 border-amber-200/50 dark:border-amber-800/40 hover:opacity-100 hover:saturate-100' : ''
+                            }`
+                          : isDull
+                          ? `bg-slate-100/80 dark:bg-slate-800/50 ${categoryMeta.textClass} border-slate-200 dark:border-slate-800 opacity-65 saturate-50 hover:opacity-100 hover:saturate-100 dark:text-slate-400`
                           : `${categoryMeta.bgLight} ${categoryMeta.textClass} ${categoryMeta.borderClass} hover:brightness-95 dark:hover:brightness-110`
                       }`}
-                      aria-label={`Event: ${event.title}, ${categoryMeta.label}${event.isMultiDay && event.endDate && event.endDate > event.date ? ', Multi-day event' : ''}${event.startTime ? `, from ${formatTime12h(event.startTime)} to ${formatTime12h(event.endTime)}` : ', All-day announcement'}${isPending ? ', Pending admin approval' : ''}`}
+                      aria-label={`Event: ${event.title}, ${categoryMeta.label}${isOutOfMonth ? ', outside active month' : ''}${isPassed ? ', past event' : ''}${event.isMultiDay && event.endDate && event.endDate > event.date ? ', Multi-day event' : ''}${event.startTime ? `, from ${formatTime12h(event.startTime)} to ${formatTime12h(event.endTime)}` : ', All-day announcement'}${isPending ? ', Pending admin approval' : ''}`}
                     >
                       {/* Dot or Pending clock */}
                       {isPending ? (
-                        <Clock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+                        <Clock className={`w-2.5 h-2.5 ${isDull ? 'text-amber-600/70 dark:text-amber-400/70' : 'text-amber-600 dark:text-amber-400'} shrink-0`} aria-hidden="true" />
                       ) : (
                         <span
-                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${categoryMeta.dotClass}`}
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${categoryMeta.dotClass} ${isDull ? 'opacity-50' : ''}`}
                           aria-hidden="true"
                         />
                       )}
 
                       {/* Event Title */}
-                      <span className="truncate font-semibold flex-1">
+                      <span className={`truncate flex-1 ${isDull ? 'font-medium text-slate-600 dark:text-slate-400' : 'font-semibold'}`}>
                         {event.title}
                       </span>
 
                       {/* Multi-day Indicator */}
                       {Boolean(event.isMultiDay && event.endDate && event.endDate > event.date) && (
                         <CalendarRange
-                          className="w-2.5 h-2.5 opacity-75 shrink-0 text-indigo-500 dark:text-indigo-400"
+                          className={`w-2.5 h-2.5 shrink-0 ${isDull ? 'opacity-50 text-slate-400' : 'opacity-75 text-indigo-500 dark:text-indigo-400'}`}
                           aria-label="Multi-day event"
                         />
                       )}
@@ -230,13 +245,13 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                       {/* Recurrence Indicator */}
                       {(event.isRecurring || event.recurringSeriesId) && (
                         <Repeat
-                          className="w-2.5 h-2.5 opacity-70 shrink-0 text-slate-500 dark:text-slate-400"
+                          className={`w-2.5 h-2.5 shrink-0 ${isDull ? 'opacity-40 text-slate-400' : 'opacity-70 text-slate-500 dark:text-slate-400'}`}
                           aria-label={`Recurring event: ${event.recurrenceRule?.humanReadable || 'Series'}`}
                         />
                       )}
 
                       {/* Small Time Badge on Larger Screens */}
-                      <span className="hidden xl:inline text-[9px] opacity-75 font-normal shrink-0">
+                      <span className={`hidden xl:inline text-[9px] font-normal shrink-0 ${isDull ? 'opacity-50 text-slate-400' : 'opacity-75'}`}>
                         {event.startTime
                           ? `${event.startTime}${!event.isMultiDay && event.endDate && event.endDate > event.date ? ' (+1d)' : ''}`
                           : (event.isMultiDay && event.endDate && event.endDate > event.date ? 'Multi-day' : 'All Day')}
