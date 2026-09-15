@@ -12,3 +12,4 @@ data/backups/
 data/*.tmp
 /data
 *.json
+/data
