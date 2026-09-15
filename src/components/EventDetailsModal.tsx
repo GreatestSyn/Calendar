@@ -262,20 +262,6 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     }
   };
 
-  const handleSaveAndApprove = async () => {
-    const updates = getSanitizedUpdates();
-    if (!updates) return;
-
-    setActionLoading(true);
-    try {
-      await onApprove(event.id, updates);
-      onClose();
-    } catch (err: any) {
-      setEditError(`Approval error: ${err.message}`);
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleSaveOnly = async () => {
     const updates = getSanitizedUpdates();
@@ -323,15 +309,17 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     setActionLoading(true);
     setEditError(null);
     try {
-      if (isPending) {
-        await onApprove(event.id, { isMultiDay: newIsMultiDay });
-      } else if (onUpdate) {
+      if (onUpdate) {
         await onUpdate(event.id, { isMultiDay: newIsMultiDay }, editScope);
       }
       setEditSuccessMessage(
         newIsMultiDay
-          ? 'Event converted to multi-day span across both days.'
-          : 'Multi-day span removed. Event is now posted strictly to the first day.'
+          ? (isPending
+              ? 'Event converted to multi-day span across both days (still pending approval).'
+              : 'Event converted to multi-day span across both days.')
+          : (isPending
+              ? 'Multi-day span removed. Event will post strictly to the first day (still pending approval).'
+              : 'Multi-day span removed. Event is now posted strictly to the first day.')
       );
     } catch (err: any) {
       setEditError(`Failed to update multi-day status: ${err.message}`);
@@ -1391,29 +1379,16 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
               <div className="flex items-center gap-2">
                 {isPending ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleSaveOnly}
-                      disabled={actionLoading}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer"
-                      title="Save edits while keeping event in pending review"
-                    >
-                      <Save className="w-3.5 h-3.5" />
-                      <span>{actionLoading ? 'Saving...' : 'Save Changes (Keep Pending)'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleSaveAndApprove}
-                      disabled={actionLoading}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg shadow-2xs transition-colors cursor-pointer"
-                      title="Save edits and immediately publish/approve event"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{actionLoading ? 'Saving & Approving...' : 'Save & Publish (Approve)'}</span>
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={handleSaveOnly}
+                    disabled={actionLoading}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                    title="Save edits while keeping event in pending review"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{actionLoading ? 'Saving...' : 'Save Changes (Keep Pending)'}</span>
+                  </button>
                 ) : (
                   <button
                     type="button"

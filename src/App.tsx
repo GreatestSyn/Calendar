@@ -726,6 +726,7 @@ function CalendarAppContent() {
           onApprove={handleApproveEvent}
           onReject={handleRejectEvent}
           onDelete={handleDeleteEvent}
+          onUpdate={handleUpdateEvent}
           onSelectEvent={(evt) => {
             setIsApprovalQueueOpen(false);
             setIsEventModalEditMode(false);

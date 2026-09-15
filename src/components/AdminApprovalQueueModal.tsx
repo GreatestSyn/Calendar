@@ -27,6 +27,7 @@ interface AdminApprovalQueueModalProps {
   onApprove: (id: string, updates?: Partial<CalendarEvent>) => Promise<void>;
   onReject: (id: string, reason?: string) => Promise<void>;
   onDelete?: (id: string, scope?: 'single' | 'series') => Promise<void>;
+  onUpdate?: (id: string, updates: Partial<CalendarEvent>, scope?: 'single' | 'series') => Promise<void>;
   onSelectEvent: (event: CalendarEvent) => void;
   onEditEvent?: (event: CalendarEvent) => void;
 }
@@ -44,6 +45,7 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
   onApprove,
   onReject,
   onDelete,
+  onUpdate,
   onSelectEvent,
   onEditEvent,
 }) => {
@@ -135,6 +137,16 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
     setProcessingId(id);
     try {
       await onApprove(id, updates);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleToggleMultiDay = async (evt: CalendarEvent) => {
+    if (!onUpdate) return;
+    setProcessingId(evt.id);
+    try {
+      await onUpdate(evt.id, { isMultiDay: !evt.isMultiDay });
     } finally {
       setProcessingId(null);
     }
@@ -409,16 +421,29 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
                         <span>{isSeries ? 'Decline Series' : 'Decline'}</span>
                       </button>
 
-                      {calculateDaysBetween(evt.date, evt.endDate) === 2 && evt.isMultiDay && (
+                      {onUpdate && calculateDaysBetween(evt.date, evt.endDate) === 2 && (
                         <button
                           type="button"
                           disabled={isProcessing}
-                          onClick={() => handleApprove(evt.id, { isMultiDay: false })}
+                          onClick={() => handleToggleMultiDay(evt)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
-                          title="Remove multi-day span and approve strictly on the first date at its start time"
+                          title={
+                            evt.isMultiDay
+                              ? 'Remove multi-day span (post strictly to 1st day) without publishing'
+                              : 'Enable multi-day span across both days without publishing'
+                          }
                         >
-                          <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                          <span>Approve as Overnight (1st Day Only)</span>
+                          {evt.isMultiDay ? (
+                            <>
+                              <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                              <span>Remove Multi-Day (Post 1st Day Only)</span>
+                            </>
+                          ) : (
+                            <>
+                              <CalendarRange className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                              <span>Enable Multi-Day Span</span>
+                            </>
+                          )}
                         </button>
                       )}
 
@@ -435,7 +460,7 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
                             ? 'Approving...'
                             : isSeries
                             ? `Approve Series (${item.occurrences.length} Events)`
-                            : 'Approve & Post'}
+                            : 'Approve & Post to Events Chat'}
                         </span>
                       </button>
                     </div>
