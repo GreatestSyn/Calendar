@@ -126,7 +126,15 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
             <div className="p-3 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-sky-900 dark:text-sky-200 text-[11px] flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
               <span>
-                Rescheduling will automatically dispatch an <strong>Important Scheduling Change Alert</strong> via Telegram to all subscribers.
+                {event.status === 'pending' ? (
+                  <>
+                    Because this event is pending approval, changes will dispatch an alert to the <strong>Admin Telegram Chat</strong> rather than the public events channel.
+                  </>
+                ) : (
+                  <>
+                    Rescheduling will automatically dispatch an <strong>Important Scheduling Change Alert</strong> via Telegram to all subscribers.
+                  </>
+                )}
               </span>
             </div>
           )}

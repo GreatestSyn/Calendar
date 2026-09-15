@@ -228,7 +228,8 @@ async function sendTelegramMessage(
       bodyPayload.message_thread_id = topicNum;
     }
 
-    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const apiBase = process.env.TELEGRAM_API_BASE || 'https://api.telegram.org';
+    const url = `${apiBase}/bot${token}/sendMessage`;
     let response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -313,7 +314,8 @@ async function sendTelegramPhoto(
       return fd;
     };
 
-    const url = `https://api.telegram.org/bot${token}/sendPhoto`;
+    const apiBase = process.env.TELEGRAM_API_BASE || 'https://api.telegram.org';
+    const url = `${apiBase}/bot${token}/sendPhoto`;
     let response = await fetch(url, {
       method: 'POST',
       body: buildFormData(true),
@@ -1509,6 +1511,66 @@ async function startServer() {
         notification: notif,
       });
 
+      const seriesDateChanged = req.body.date !== undefined && req.body.date !== previous.date;
+      const seriesTimeChanged =
+        (startTime !== undefined && startTime !== previous.startTime) ||
+        (endTime !== undefined && endTime !== previous.endTime);
+      const seriesLocationChanged =
+        location !== undefined && String(location).trim() !== (previous.location || '').trim();
+      const seriesScheduleOrLocationChanged = seriesDateChanged || seriesTimeChanged || seriesLocationChanged;
+
+      if (seriesScheduleOrLocationChanged && telegramConfig.isConfigured) {
+        if (targetEvent.status === 'pending') {
+          const adminDest = getAdminChatAndTopic();
+          if (adminDest.chatId) {
+            let changeDetails = '';
+            if (seriesTimeChanged || seriesDateChanged) {
+              const oldTime = (previous.startTime && previous.endTime)
+                ? `${previous.startTime} – ${previous.endTime}`
+                : (previous.startTime || 'Untimed');
+              const newTime = (targetEvent.startTime && targetEvent.endTime)
+                ? `${targetEvent.startTime} – ${targetEvent.endTime}`
+                : (targetEvent.startTime || 'Untimed');
+              changeDetails += `⏰ <b>Time Updated:</b> ${oldTime} ➔ ${newTime}\n`;
+            }
+            if (seriesLocationChanged) {
+              changeDetails += `📍 <b>Location Updated:</b> ${previous.location || 'None'} ➔ ${targetEvent.location}\n`;
+            }
+
+            const adminTgMsg =
+              `📝 <b>Pending Recurring Series Updated</b>\n\n` +
+              `📌 <b>${targetEvent.title}</b> <i>(${seriesEvents.length} events in series awaiting approval)</i>\n\n` +
+              changeDetails + `\n` +
+              `👤 <b>Submitter:</b> ${targetEvent.submitterName || 'Unknown'} (${targetEvent.submitterEmail || 'N/A'})\n\n` +
+              `⚠️ <i>Status: Series is still pending approval in admin dashboard.</i>`;
+
+            await sendTelegramMessage(adminTgMsg, adminDest.chatId, adminDest.topicId);
+          }
+        } else if (targetEvent.status === 'approved' && telegramConfig.notifyOnReschedule) {
+          const eventsDest = getEventsChatAndTopic();
+          if (eventsDest.chatId) {
+            let details = '';
+            if (seriesTimeChanged) {
+              const timeDisplay = (targetEvent.startTime && targetEvent.endTime)
+                ? `${targetEvent.startTime} – ${targetEvent.endTime}`
+                : (targetEvent.startTime || 'Untimed');
+              details += `⏰ <b>New Time:</b> ${timeDisplay}\n`;
+            }
+            if (seriesLocationChanged) {
+              details += `📍 <b>Location Changed:</b> ${targetEvent.location} (Previously: ${previous.location || 'None'})\n`;
+            }
+
+            const tgMsg =
+              `⚠️ <b>Recurring Series Update Alert</b>\n\n` +
+              `📌 <b>${targetEvent.title}</b> recurring series has been updated!\n\n` +
+              details + `\n` +
+              `Please check the community calendar for updated schedule details.`;
+
+            await sendTelegramMessage(tgMsg, eventsDest.chatId, eventsDest.topicId);
+          }
+        }
+      }
+
       return res.json({ success: true, event: targetEvent, updatedCount: seriesEvents.length });
     }
 
@@ -1547,16 +1609,33 @@ async function startServer() {
 
     const dateChanged =
       previous.date !== updated.date ||
-      previous.endDate !== updated.endDate ||
-      previous.startTime !== updated.startTime;
+      previous.endDate !== updated.endDate;
+
+    const timeChanged =
+      previous.startTime !== updated.startTime ||
+      previous.endTime !== updated.endTime;
+
+    const locationChanged =
+      (previous.location || '').trim() !== (updated.location || '').trim();
+
+    const scheduleOrLocationChanged = dateChanged || timeChanged || locationChanged;
+
     eventsStore[eventIndex] = updated;
+
+    let notifTitle = 'Event Updated';
+    let notifMsg = `"${updated.title}" event details updated.`;
+    if (dateChanged || timeChanged) {
+      notifTitle = 'Important Scheduling Change';
+      notifMsg = `"${updated.title}" rescheduled from ${formatEventDateRange(previous.date, previous.endDate, previous.isMultiDay)} to ${formatEventDateRange(updated.date, updated.endDate, updated.isMultiDay)}.`;
+    } else if (locationChanged) {
+      notifTitle = 'Event Location Updated';
+      notifMsg = `"${updated.title}" location changed to ${updated.location}.`;
+    }
 
     const notif: AdminNotification = {
       id: `notif-${Date.now()}`,
-      title: dateChanged ? 'Important Scheduling Change' : 'Event Updated',
-      message: dateChanged
-        ? `"${updated.title}" rescheduled from ${formatEventDateRange(previous.date, previous.endDate, previous.isMultiDay)} to ${formatEventDateRange(updated.date, updated.endDate, updated.isMultiDay)}.`
-        : `"${updated.title}" event details updated.`,
+      title: notifTitle,
+      message: notifMsg,
       type: 'reschedule',
       eventId: updated.id,
       timestamp: new Date().toISOString(),
@@ -1569,12 +1648,11 @@ async function startServer() {
     broadcastSSE('EVENT_UPDATED', {
       event: updated,
       notification: notif,
-      dateChanged,
+      dateChanged: dateChanged || timeChanged,
     });
 
-    // Notify via Telegram if scheduling changed
-    if (dateChanged && telegramConfig.isConfigured && telegramConfig.notifyOnReschedule) {
-      const { chatId: targetChat, topicId: targetTopic } = getEventsChatAndTopic();
+    // Notify via Telegram if scheduling or location changed
+    if (scheduleOrLocationChanged && telegramConfig.isConfigured) {
       const oldRange = formatEventDateRange(previous.date, previous.endDate, previous.isMultiDay);
       const newRange = formatEventDateRange(updated.date, updated.endDate, updated.isMultiDay);
       const oldTime = (previous.startTime && previous.endTime)
@@ -1583,14 +1661,61 @@ async function startServer() {
       const newTime = (updated.startTime && updated.endTime)
         ? `${updated.startTime} – ${updated.endTime}`
         : (updated.startTime || 'Untimed');
-      const tgMsg =
-        `⚠️ <b>Important Scheduling Change Alert</b>\n\n` +
-        `📌 <b>${updated.title}</b> has been rescheduled!\n\n` +
-        `⏮️ <b>Old Schedule:</b> ${oldRange} (${oldTime})\n` +
-        `⏭️ <b>New Schedule:</b> ${newRange} (${newTime})\n` +
-        `📍 <b>Location:</b> ${updated.location}\n\n` +
-        `Please update your calendars accordingly.`;
-      await sendTelegramMessage(tgMsg, targetChat, targetTopic);
+
+      if (updated.status === 'pending') {
+        // Event is pending approval: DO NOT send notice to public events chat.
+        // Send alert to the admin chat since the event still needs to be approved.
+        const adminDest = getAdminChatAndTopic();
+        if (adminDest.chatId) {
+          let changeDetails = '';
+          if (dateChanged || timeChanged) {
+            changeDetails += `⏮️ <b>Old Schedule:</b> ${oldRange} (${oldTime})\n`;
+            changeDetails += `⏭️ <b>New Schedule:</b> ${newRange} (${newTime})\n`;
+          } else {
+            changeDetails += `📅 <b>Schedule:</b> ${newRange} (${newTime})\n`;
+          }
+          if (locationChanged) {
+            changeDetails += `📍 <b>Previous Location:</b> ${previous.location || 'None'}\n`;
+            changeDetails += `📍 <b>New Location:</b> ${updated.location || 'None'}\n`;
+          } else {
+            changeDetails += `📍 <b>Location:</b> ${updated.location || 'None'}\n`;
+          }
+
+          const adminTgMsg =
+            `📝 <b>Pending Event Updated</b>\n\n` +
+            `📌 <b>${updated.title}</b> <i>(Awaiting Approval)</i>\n\n` +
+            changeDetails + `\n` +
+            `👤 <b>Submitter:</b> ${updated.submitterName || 'Unknown'} (${updated.submitterEmail || 'N/A'})\n\n` +
+            `⚠️ <i>Action required: This event is still pending approval. Review and approve or reject in the admin dashboard.</i>`;
+
+          await sendTelegramMessage(adminTgMsg, adminDest.chatId, adminDest.topicId);
+        }
+      } else if (updated.status === 'approved' && telegramConfig.notifyOnReschedule) {
+        // Event is already approved and public: send scheduling change alert to the dedicated events chat
+        const eventsDest = getEventsChatAndTopic();
+        if (eventsDest.chatId) {
+          let details = '';
+          if (dateChanged || timeChanged) {
+            details += `⏮️ <b>Old Schedule:</b> ${oldRange} (${oldTime})\n`;
+            details += `⏭️ <b>New Schedule:</b> ${newRange} (${newTime})\n`;
+          } else {
+            details += `📅 <b>Schedule:</b> ${newRange} (${newTime})\n`;
+          }
+          if (locationChanged) {
+            details += `📍 <b>Location Changed:</b> ${updated.location} (Previously: ${previous.location || 'None'})\n\n`;
+          } else {
+            details += `📍 <b>Location:</b> ${updated.location}\n\n`;
+          }
+
+          const tgMsg =
+            `⚠️ <b>Important Scheduling Change Alert</b>\n\n` +
+            `📌 <b>${updated.title}</b> has been rescheduled!\n\n` +
+            details +
+            `Please update your calendars accordingly.`;
+
+          await sendTelegramMessage(tgMsg, eventsDest.chatId, eventsDest.topicId);
+        }
+      }
     }
 
     res.json({ success: true, event: updated });
@@ -2279,7 +2404,7 @@ function onFormSubmit(e) {
   });
 
   // Vite middleware in dev mode / static build in production
-  const isRunningFromDist = __filename.includes('dist') || (Boolean(process.argv[1]) && process.argv[1].includes('dist'));
+  const isRunningFromDist = (typeof __filename !== 'undefined' && __filename.includes('dist')) || (Boolean(process.argv[1]) && process.argv[1].includes('dist'));
   const hasDistFiles = fs.existsSync(path.join(process.cwd(), 'dist', 'index.html'));
   const isProduction = process.env.NODE_ENV === 'production' || (isRunningFromDist && hasDistFiles);
 
