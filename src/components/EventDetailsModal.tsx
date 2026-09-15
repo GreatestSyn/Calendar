@@ -552,11 +552,7 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               id="admin-event-edit-form"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (isPending) {
-                  handleSaveAndApprove();
-                } else {
-                  handleSaveOnly();
-                }
+                handleSaveOnly();
               }}
               className="space-y-4"
             >
@@ -1400,21 +1396,22 @@ export const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                       type="button"
                       onClick={handleSaveOnly}
                       disabled={actionLoading}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg shadow-2xs transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer"
                       title="Save edits while keeping event in pending review"
                     >
-                      <Save className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-                      <span>Save (Keep Pending)</span>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{actionLoading ? 'Saving...' : 'Save Changes (Keep Pending)'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={handleSaveAndApprove}
                       disabled={actionLoading}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg shadow-2xs transition-colors cursor-pointer"
+                      title="Save edits and immediately publish/approve event"
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{actionLoading ? 'Saving & Approving...' : 'Save & Approve'}</span>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{actionLoading ? 'Saving & Approving...' : 'Save & Publish (Approve)'}</span>
                     </button>
                   </>
                 ) : (

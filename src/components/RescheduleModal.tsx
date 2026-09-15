@@ -329,7 +329,11 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
               disabled={saving}
               className="px-4 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer"
             >
-              {saving ? 'Updating...' : 'Save & Publish Change'}
+              {saving
+                ? 'Updating...'
+                : event.status === 'pending'
+                ? 'Save Schedule (Keep Pending)'
+                : 'Save & Publish Change'}
             </button>
           </div>
         </form>

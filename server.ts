@@ -1575,6 +1575,8 @@ async function startServer() {
     }
 
     const updated = { ...previous, ...req.body };
+    // Ensure editing or rescheduling an event never changes its approval status
+    updated.status = previous.status;
     if (req.body.endDate !== undefined) {
       const trimmedEnd = String(req.body.endDate).trim();
       updated.endDate = trimmedEnd || undefined;
