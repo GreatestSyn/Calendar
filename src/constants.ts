@@ -155,4 +155,37 @@ export function getVisibleGridDateRange(currentMonthDate: Date): { startStr: str
   return { startStr, endStr };
 }
 
+export function compareEventsByDateTime(a: CalendarEvent, b: CalendarEvent): number {
+  // 1. Compare start dates (YYYY-MM-DD)
+  const dateDiff = a.date.localeCompare(b.date);
+  if (dateDiff !== 0) return dateDiff;
+
+  // 2. Start Time: Untimed / All-day events first, then chronological
+  const aHasTime = Boolean(a.startTime);
+  const bHasTime = Boolean(b.startTime);
+
+  if (!aHasTime && bHasTime) return -1;
+  if (aHasTime && !bHasTime) return 1;
+  if (aHasTime && bHasTime) {
+    const timeDiff = a.startTime!.localeCompare(b.startTime!);
+    if (timeDiff !== 0) return timeDiff;
+  }
+
+  // 3. End Time: Earlier end time first
+  const aHasEndTime = Boolean(a.endTime);
+  const bHasEndTime = Boolean(b.endTime);
+
+  if (aHasEndTime && bHasEndTime) {
+    const endDiff = a.endTime!.localeCompare(b.endTime!);
+    if (endDiff !== 0) return endDiff;
+  } else if (!aHasEndTime && bHasEndTime) {
+    return -1;
+  } else if (aHasEndTime && !bHasEndTime) {
+    return 1;
+  }
+
+  // 4. Stable tie-breaker by title
+  return a.title.localeCompare(b.title);
+}
+
 

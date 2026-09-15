@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarEvent } from '../types';
-import { CATEGORIES, formatTime12h, formatDatePretty, calculateDaysBetween, formatEventDateRange } from '../constants';
+import { CATEGORIES, formatTime12h, formatDatePretty, calculateDaysBetween, formatEventDateRange, compareEventsByDateTime } from '../constants';
 import {
   X,
   Clock,
@@ -52,7 +52,7 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
       if (e.isMultiDay && e.endDate && e.date <= selectedDate && e.endDate >= selectedDate) return true;
       return false;
     })
-    .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+    .sort(compareEventsByDateTime);
 
   return (
     <div

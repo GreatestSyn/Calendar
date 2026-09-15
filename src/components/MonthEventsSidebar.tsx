@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CalendarEvent } from '../types';
-import { CATEGORIES, formatTime12h, formatDatePretty, formatEventDateRange } from '../constants';
+import { CATEGORIES, formatTime12h, formatDatePretty, formatEventDateRange, compareEventsByDateTime } from '../constants';
 import { Calendar, Clock, MapPin, CheckCircle, Hourglass, ArrowRight, CalendarRange } from 'lucide-react';
 
 interface MonthEventsSidebarProps {
@@ -38,7 +38,7 @@ export const MonthEventsSidebar: React.FC<MonthEventsSidebarProps> = ({
       if (e.isMultiDay && e.endDate && e.date <= monthEndStr && e.endDate >= monthStartStr) return true;
       return false;
     })
-    .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime || '').localeCompare(b.startTime || ''));
+    .sort(compareEventsByDateTime);
 
   // Count by category
   const categoryCounts = monthEvents.reduce((acc, evt) => {

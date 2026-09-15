@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CalendarEvent, EventCategory, AdminNotification, RealtimeMessage } from './types';
-import { INITIAL_EVENTS, CATEGORIES, formatTime12h, formatDatePretty, formatEventDateRange, getVisibleGridDateRange } from './constants';
+import { INITIAL_EVENTS, CATEGORIES, formatTime12h, formatDatePretty, formatEventDateRange, getVisibleGridDateRange, compareEventsByDateTime } from './constants';
 import {
   fetchEvents,
   subscribeToRealtimeEvents,
@@ -448,7 +448,7 @@ function CalendarAppContent() {
       }
 
       return true;
-    });
+    }).sort(compareEventsByDateTime);
   }, [events, searchQuery, selectedCategory, statusFilter, timeframe, currentMonthDate, effectiveIsAdmin]);
 
   return (
