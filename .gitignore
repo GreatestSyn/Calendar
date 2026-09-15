@@ -14,3 +14,4 @@ data/*.tmp
 *.json
 /data
 data/events.json
+*.json
