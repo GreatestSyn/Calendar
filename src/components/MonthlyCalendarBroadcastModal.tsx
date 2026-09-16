@@ -409,7 +409,7 @@ export const MonthlyCalendarBroadcastModal: React.FC<MonthlyCalendarBroadcastMod
                 <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <Clock className="w-3 h-3 text-indigo-500 dark:text-indigo-400" />
                   <span>
-                    Monthly cron automation scheduled on day {telegramConfig.monthlyPostDay || 1} of every month
+                    Monthly automated publication scheduled on the 1st of every month
                   </span>
                 </div>
               )}

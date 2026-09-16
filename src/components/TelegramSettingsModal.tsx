@@ -48,9 +48,7 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
   const [notifyOnSubmission, setNotifyOnSubmission] = useState(true);
   const [notifyOnApproval, setNotifyOnApproval] = useState(true);
   const [notifyOnReschedule, setNotifyOnReschedule] = useState(true);
-  const [notifyDailyReminders, setNotifyDailyReminders] = useState(true);
   const [notifyMonthlyCalendar, setNotifyMonthlyCalendar] = useState(true);
-  const [monthlyPostDay, setMonthlyPostDay] = useState(1);
   const [includeCalendarImage, setIncludeCalendarImage] = useState(true);
   const [lastMonthlyPost, setLastMonthlyPost] = useState<TelegramConfig['lastMonthlyPost']>();
 
@@ -76,9 +74,7 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
         setNotifyOnSubmission(cfg.notifyOnSubmission ?? true);
         setNotifyOnApproval(cfg.notifyOnApproval ?? true);
         setNotifyOnReschedule(cfg.notifyOnReschedule ?? true);
-        setNotifyDailyReminders(cfg.notifyDailyReminders ?? true);
         setNotifyMonthlyCalendar(cfg.notifyMonthlyCalendar !== false);
-        setMonthlyPostDay(cfg.monthlyPostDay || 1);
         setIncludeCalendarImage(cfg.includeCalendarImage !== false);
         setLastMonthlyPost(cfg.lastMonthlyPost);
       })
@@ -112,9 +108,8 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
         notifyOnSubmission,
         notifyOnApproval,
         notifyOnReschedule,
-        notifyDailyReminders,
         notifyMonthlyCalendar,
-        monthlyPostDay,
+        monthlyPostDay: 1,
         includeCalendarImage,
       });
       setTestResult({
@@ -539,31 +534,7 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                 </div>
               </label>
 
-              {/* Daily Scheduled Event Reminders */}
-              <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-slate-100 dark:border-slate-800">
-                <input
-                  type="checkbox"
-                  checked={notifyDailyReminders}
-                  onChange={(e) => setNotifyDailyReminders(e.target.checked)}
-                  className="mt-0.5 rounded text-sky-600 focus:ring-sky-500 h-4 w-4"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                      <Bell className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      Daily Morning Event Reminders
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
-                      &rarr; Events Topic
-                    </span>
-                  </div>
-                  <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
-                    Dispatches a daily morning overview of today's approved schedule to the <strong>Events & Publications Topic</strong>.
-                  </p>
-                </div>
-              </label>
-
-              {/* Monthly Automated Calendar Post */}
+              {/* Monthly Automated Calendar Post (1st of the month) */}
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <label className="flex items-start gap-2.5 cursor-pointer select-none">
                   <input
@@ -576,34 +547,25 @@ export const TelegramSettingsModal: React.FC<TelegramSettingsModalProps> = ({
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                        Monthly Automated Calendar Publication
+                        Monthly Automated Calendar Publication (1st of the Month)
                       </span>
                       <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
                         &rarr; Events Topic
                       </span>
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5">
-                      Automatically publishes a monthly calendar summary with breakdown to the <strong>Events & Publications Topic</strong>.
+                      Automatically publishes a monthly calendar summary and schedule breakdown to the <strong>Events & Publications Topic</strong> on the 1st of every month.
                     </p>
                   </div>
                 </label>
 
                 {notifyMonthlyCalendar && (
                   <div className="mt-2.5 ml-6.5 p-2.5 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-lg border border-indigo-100 dark:border-indigo-900/50 space-y-2">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
-                        <span>Day of month to post:</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={28}
-                          value={monthlyPostDay}
-                          onChange={(e) => setMonthlyPostDay(Math.max(1, Math.min(28, parseInt(e.target.value) || 1)))}
-                          className="w-14 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded text-center font-bold text-xs"
-                        />
-                        <span className="text-slate-500 dark:text-slate-400 font-normal">(e.g. 1st of every month)</span>
-                      </label>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                        <span>Schedule: <strong>1st of every month</strong></span>
+                      </div>
 
                       <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 cursor-pointer">
                         <input

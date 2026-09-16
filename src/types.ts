@@ -82,7 +82,7 @@ export interface TelegramConfig {
   notifyOnSubmission: boolean;
   notifyOnApproval: boolean;
   notifyOnReschedule: boolean;
-  notifyDailyReminders: boolean;
+  notifyDailyReminders?: boolean;
   notifyMonthlyCalendar?: boolean;
   monthlyPostDay?: number; // Day of the month to post (1-28)
   includeCalendarImage?: boolean;

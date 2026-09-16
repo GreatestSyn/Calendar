@@ -73,7 +73,7 @@ interface TelegramConfig {
   notifyOnSubmission: boolean;
   notifyOnApproval: boolean;
   notifyOnReschedule: boolean;
-  notifyDailyReminders: boolean;
+  notifyDailyReminders?: boolean;
   notifyMonthlyCalendar?: boolean;
   monthlyPostDay?: number; // Day of the month to post (1-28)
   includeCalendarImage?: boolean;
@@ -149,7 +149,7 @@ let telegramConfig: TelegramConfig = {
   notifyOnSubmission: persistedTelegramConfig.notifyOnSubmission ?? true,
   notifyOnApproval: persistedTelegramConfig.notifyOnApproval ?? true,
   notifyOnReschedule: persistedTelegramConfig.notifyOnReschedule ?? true,
-  notifyDailyReminders: persistedTelegramConfig.notifyDailyReminders ?? true,
+  notifyDailyReminders: false,
   notifyMonthlyCalendar: persistedTelegramConfig.notifyMonthlyCalendar ?? true,
   monthlyPostDay: persistedTelegramConfig.monthlyPostDay || 1,
   includeCalendarImage: persistedTelegramConfig.includeCalendarImage ?? true,
@@ -1966,14 +1966,9 @@ async function startServer() {
     if (notifyOnSubmission !== undefined) telegramConfig.notifyOnSubmission = Boolean(notifyOnSubmission);
     if (notifyOnApproval !== undefined) telegramConfig.notifyOnApproval = Boolean(notifyOnApproval);
     if (notifyOnReschedule !== undefined) telegramConfig.notifyOnReschedule = Boolean(notifyOnReschedule);
-    if (notifyDailyReminders !== undefined) telegramConfig.notifyDailyReminders = Boolean(notifyDailyReminders);
+    telegramConfig.notifyDailyReminders = false;
     if (notifyMonthlyCalendar !== undefined) telegramConfig.notifyMonthlyCalendar = Boolean(notifyMonthlyCalendar);
-    if (monthlyPostDay !== undefined) {
-      const day = parseInt(monthlyPostDay, 10);
-      if (!isNaN(day) && day >= 1 && day <= 28) {
-        telegramConfig.monthlyPostDay = day;
-      }
-    }
+    telegramConfig.monthlyPostDay = 1;
     if (includeCalendarImage !== undefined) telegramConfig.includeCalendarImage = Boolean(includeCalendarImage);
 
     telegramConfig.isConfigured = Boolean(
@@ -2041,7 +2036,7 @@ async function startServer() {
     const testMsg =
       targetType === 'events'
         ? `🎉 <b>Community Events Chat: Connection Verified!</b>\n\n` +
-          `This chat/topic${topicBadge} is configured to receive automatic event announcements upon admin approval, rescheduling notices, upcoming reminders, and monthly calendar publications.\n\n` +
+          `This chat/topic${topicBadge} is configured to receive automatic event announcements upon admin approval, rescheduling notices, and monthly calendar publications on the 1st of the month.\n\n` +
           `🕒 Connected: ${new Date().toLocaleString()}`
         : `🎉 <b>Calendar App: Telegram Admin Alerts Connected!</b>\n\n` +
           `Your bot is configured to dispatch real-time administrator approval alerts and incoming event submissions to this topic${topicBadge}.\n\n` +
@@ -2427,7 +2422,7 @@ function onFormSubmit(e) {
     });
   }
 
-  // Periodic background check for automated monthly calendar posts & daily reminders
+  // Periodic background check for automated monthly calendar overview on the 1st of each month
   setInterval(async () => {
     try {
       if (!telegramConfig.isConfigured) return;
@@ -2435,35 +2430,12 @@ function onFormSubmit(e) {
       if (!targetChat) return;
 
       const now = new Date();
-      const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      // 1. Daily Event Reminders to Events Topic (e.g. at/after 8 AM)
-      if (telegramConfig.notifyDailyReminders && (telegramConfig as any).lastDailyReminderDate !== todayKey && now.getHours() >= 8) {
-        const todayEvents = eventsStore
-          .filter(e => e.status === 'approved' && (e.date === todayKey || (e.endDate && e.date <= todayKey && e.endDate >= todayKey)))
-          .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
-
-        if (todayEvents.length > 0) {
-          let reminderMsg = `☀️ <b>TODAY'S COMMUNITY SCHEDULE — ${todayKey}</b>\n\n`;
-          todayEvents.forEach((e, idx) => {
-            const timeStr = e.startTime ? `${e.startTime}${e.endTime ? ` – ${e.endTime}` : ''}` : 'All Day';
-            const multiDayBadge = e.isMultiDay && e.endDate
-              ? ` [Day ${calculateDaysBetween(e.date, todayKey)} of ${calculateDaysBetween(e.date, e.endDate)}]`
-              : '';
-            reminderMsg += `${idx + 1}. <b>${e.title}</b>${multiDayBadge}\n   ⏰ ${timeStr}\n   📍 ${e.location}\n\n`;
-          });
-          reminderMsg += `🔗 <i>View full itineraries on the live community calendar!</i>`;
-          await sendTelegramMessage(reminderMsg, targetChat, targetTopic);
-        }
-        (telegramConfig as any).lastDailyReminderDate = todayKey;
-      }
-
-      // 2. Monthly Automated Calendar Overview
+      // Monthly Automated Calendar Overview (Dispatches strictly on the 1st of each month)
       const currentDay = now.getDate();
-      const targetDay = telegramConfig.monthlyPostDay || 1;
       const currentMonthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
 
-      if (telegramConfig.notifyMonthlyCalendar && currentDay === targetDay && telegramConfig.lastMonthlyPostMonth !== currentMonthKey) {
+      if (telegramConfig.notifyMonthlyCalendar !== false && currentDay === 1 && telegramConfig.lastMonthlyPostMonth !== currentMonthKey) {
         console.log(`Executing automated monthly calendar post for ${currentMonthKey}...`);
         const month = now.getMonth();
         const year = now.getFullYear();
