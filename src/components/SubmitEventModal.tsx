@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarEvent, EventCategory, RecurrenceRule } from '../types';
 import { CATEGORIES, calculateDaysBetween, addDaysToDate, formatTime12h } from '../constants';
-import { X, CalendarPlus, CheckCircle2, Sparkles, Clock, Repeat, CalendarRange } from 'lucide-react';
+import { X, CalendarPlus, CheckCircle2, Sparkles, Clock, Repeat, CalendarRange, Image as ImageIcon } from 'lucide-react';
 import { submitEventDirect } from '../services/api';
 import { RecurrenceSelector } from './RecurrenceSelector';
 
@@ -31,6 +31,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
   const [submitterName, setSubmitterName] = useState('');
   const [submitterEmail, setSubmitterEmail] = useState('');
   const [location, setLocation] = useState('');
+  const [flyerUrl, setFlyerUrl] = useState('');
   const [description, setDescription] = useState('');
   const [expectedAttendees, setExpectedAttendees] = useState('');
   const [equipmentNeeds, setEquipmentNeeds] = useState('');
@@ -97,6 +98,13 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
     }
     const trimmedLocation = location.trim();
     const trimmedDesc = description.trim();
+    const trimmedFlyer = flyerUrl.trim();
+
+    if (trimmedFlyer && /(?:instagram\.com|instagr\.am)\/(?:p|reel|tv)\//i.test(trimmedFlyer)) {
+      setError('Instagram post links cannot be used directly because Meta blocks external crawlers. Please provide a direct image URL (e.g. right-click the image on desktop and select "Copy Image Address", or upload to an image host).');
+      setSubmitting(false);
+      return;
+    }
 
     // End date cannot be before start date
     if (trimmedEndDate < trimmedDate) {
@@ -184,6 +192,7 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
         submitterEmail: trimmedHandle || (isCelebration ? '@community' : '@member'),
         location: trimmedLocation || (isCelebration ? 'Celebration / Community' : 'Online / TBD'),
         description: trimmedDesc || (isCelebration ? 'Celebration / Anniversary Announcement' : ''),
+        flyerUrl: flyerUrl.trim() || undefined,
         expectedAttendees: expectedAttendees.trim(),
         equipmentNeeds: equipmentNeeds.trim(),
         recurrenceRule: recurrenceRule || undefined,
@@ -606,6 +615,54 @@ export const SubmitEventModal: React.FC<SubmitEventModalProps> = ({
               placeholder={isCelebration ? 'Optional celebration details or anniversary milestone announcement...' : 'Outline objectives, agendas, or background details...'}
               className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+              <ImageIcon className="w-3.5 h-3.5 text-indigo-500" />
+              Event Flyer / Image Link <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <input
+              type="url"
+              value={flyerUrl}
+              onChange={(e) => setFlyerUrl(e.target.value)}
+              placeholder="https://example.com/event-flyer.jpg or public image URL"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            />
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              Must be a direct image URL (ending in .jpg, .png, .webp, or hosted on Imgur/Postimages). This photo will be posted directly to Telegram when approved.
+            </p>
+            {flyerUrl.trim() && /(?:instagram\.com|instagr\.am)\/(?:p|reel|tv)\//i.test(flyerUrl) && (
+              <div className="mt-2 p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 rounded-lg text-xs text-amber-900 dark:text-amber-200 flex flex-col gap-1">
+                <span className="font-bold">⚠️ Instagram post links cannot be used directly as flyer photos</span>
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                  Meta's login wall prevents Telegram and external apps from downloading photos from post URLs.
+                  <br />
+                  <b>To use this flyer:</b> Open the Instagram post on a desktop computer, right-click the image, choose <b>"Copy Image Address"</b>, and paste that direct link here (or upload the flyer file to an image host like Postimages or Imgur).
+                </p>
+              </div>
+            )}
+            {flyerUrl.trim() && !/(?:instagram\.com|instagr\.am)\/(?:p|reel|tv)\//i.test(flyerUrl) && (
+              <div className="mt-2 flex items-center gap-2.5 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
+                <img
+                  src={flyerUrl.trim()}
+                  alt="Flyer preview"
+                  className="w-12 h-12 object-cover rounded shadow-2xs border border-slate-200 dark:border-slate-700 shrink-0"
+                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-slate-700 dark:text-slate-200 truncate">Direct image attached</div>
+                  <a
+                    href={flyerUrl.trim()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 dark:text-indigo-400 text-[11px] hover:underline truncate block"
+                  >
+                    {flyerUrl.trim()}
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

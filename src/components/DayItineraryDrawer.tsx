@@ -14,6 +14,7 @@ import {
   Download,
   CalendarPlus,
   CalendarRange,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { downloadIcsFile, downloadMultipleEventsIcs } from '../utils/calendarExport';
 
@@ -202,6 +203,13 @@ export const DayItineraryDrawer: React.FC<DayItineraryDrawerProps> = ({
                         <CalendarRange className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                         <span>Day {currentDayNumber} of {totalDays}</span>
                         <span className="text-indigo-400 font-normal">({formatEventDateRange(event.date, event.endDate, event.isMultiDay)})</span>
+                      </div>
+                    )}
+
+                    {event.flyerUrl && (
+                      <div className="mb-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-50/80 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/70">
+                        <ImageIcon className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                        <span>Flyer Attached</span>
                       </div>
                     )}
 

@@ -37,6 +37,7 @@ interface CalendarEvent {
   submitterName: string;
   submitterEmail: string;
   location: string;
+  flyerUrl?: string;
   description: string;
   expectedAttendees?: string | number;
   equipmentNeeds?: string;
@@ -202,7 +203,8 @@ function normalizeTopicId(topicRaw?: string | number): number | undefined {
 async function sendTelegramMessage(
   text: string,
   targetChatId?: string,
-  targetTopicId?: number | string
+  targetTopicId?: number | string,
+  disableWebPagePreview: boolean = true
 ): Promise<{ success: boolean; error?: string; messageId?: number; postedToChat?: string; postedToTopic?: string }> {
   const token = telegramConfig.botToken.trim();
   const chatId = targetChatId || telegramConfig.adminChatId.trim();
@@ -221,7 +223,7 @@ async function sendTelegramMessage(
       chat_id: chatId,
       text,
       parse_mode: 'HTML',
-      disable_web_page_preview: true,
+      disable_web_page_preview: disableWebPagePreview,
     };
 
     if (topicNum !== undefined) {
@@ -379,6 +381,157 @@ async function sendTelegramPhoto(
       postedToChat: chatId,
     };
   }
+}
+
+function formatEventTelegramPost(
+  event: CalendarEvent,
+  headerLine: string,
+  footerLine: string
+): string {
+  const timeStr = event.startTime
+    ? `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ''}`
+    : (event.category === 'celebration' ? 'All Day Celebration' : 'All Day / Untimed');
+
+  const recurrenceInfo = event.isRecurring && event.recurrenceRule?.humanReadable
+    ? `\n🔁 <b>Series:</b> ${event.recurrenceRule.humanReadable}`
+    : '';
+
+  const dateRangeDisplay = formatEventDateRange(event.date, event.endDate, event.isMultiDay);
+
+  const flyerInfo = event.flyerUrl
+    ? `🖼️ <b>Event Flyer:</b> <a href="${event.flyerUrl}">View Flyer Details</a>\n`
+    : '';
+
+  return (
+    `${headerLine}\n\n` +
+    `📌 <b>${event.title}</b>\n` +
+    `📅 <b>Date${event.isMultiDay ? 's' : ''}:</b> ${dateRangeDisplay}\n` +
+    `⏰ <b>Time:</b> ${timeStr}\n` +
+    `🏷️ <b>Category:</b> ${event.category.toUpperCase()}\n` +
+    `📍 <b>Location:</b> ${event.location || 'Community Venue / Virtual'}\n` +
+    `👤 <b>Organizer:</b> ${event.submitterName}\n` +
+    (event.expectedAttendees ? `👥 <b>Expected Attendees:</b> ${event.expectedAttendees}\n` : '') +
+    (event.equipmentNeeds ? `🛠️ <b>Equipment/Notes:</b> ${event.equipmentNeeds}\n` : '') +
+    flyerInfo +
+    recurrenceInfo +
+    `\n📝 <b>Description:</b>\n${event.description || 'No description provided.'}\n\n` +
+    footerLine
+  );
+}
+
+// Dispatches event announcement or reminder, attaching flyer image as a photo if available
+async function sendTelegramEventPost(
+  caption: string,
+  flyerUrl?: string,
+  targetChatId?: string,
+  targetTopicId?: number | string
+): Promise<{ success: boolean; error?: string; messageId?: number; postedToChat?: string; postedToTopic?: string }> {
+  const token = telegramConfig.botToken.trim();
+  const chatId = targetChatId || telegramConfig.eventsChatId?.trim() || telegramConfig.channelChatId?.trim() || telegramConfig.adminChatId.trim();
+
+  if (!token || !chatId) {
+    return {
+      success: false,
+      error: 'Telegram Bot Token or Target Chat ID is not configured.',
+    };
+  }
+
+  const cleanFlyerUrl = typeof flyerUrl === 'string' ? flyerUrl.trim() : '';
+
+  // If no flyer URL, send standard text message
+  if (!cleanFlyerUrl) {
+    return await sendTelegramMessage(caption, chatId, targetTopicId);
+  }
+
+  const topicNum = normalizeTopicId(targetTopicId);
+  const apiBase = process.env.TELEGRAM_API_BASE || 'https://api.telegram.org';
+
+  // Telegram caption limit is 1024 characters for sendPhoto
+  const trimmedCaption = caption.length > 1020 ? `${caption.slice(0, 1017)}...` : caption;
+
+  // 1. Attempt sending as photo with public URL
+  if (/^https?:\/\//i.test(cleanFlyerUrl)) {
+    try {
+      const photoPayload: any = {
+        chat_id: chatId,
+        photo: cleanFlyerUrl,
+        caption: trimmedCaption,
+        parse_mode: 'HTML',
+      };
+      if (topicNum !== undefined) {
+        photoPayload.message_thread_id = topicNum;
+      }
+
+      const url = `${apiBase}/bot${token}/sendPhoto`;
+      let res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(photoPayload),
+      });
+
+      let data = (await res.json()) as any;
+
+      // Retry without topic if message thread was not found
+      if (!data.ok && topicNum !== undefined && data.description && /message thread not found/i.test(data.description)) {
+        console.warn(`[Telegram Photo] Topic #${topicNum} not found. Retrying in General topic...`);
+        delete photoPayload.message_thread_id;
+        res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(photoPayload),
+        });
+        data = (await res.json()) as any;
+      }
+
+      if (data && data.ok) {
+        if (caption.length > 1020) {
+          const overflow = caption.slice(1017);
+          await sendTelegramMessage(overflow, chatId, targetTopicId);
+        }
+        return {
+          success: true,
+          messageId: data.result?.message_id,
+          postedToChat: chatId,
+          postedToTopic: topicNum !== undefined ? String(topicNum) : undefined,
+        };
+      }
+
+      console.warn('[Telegram Photo URL] Direct sendPhoto failed, checking if buffer upload works:', data?.description);
+
+      // 2. Attempt fetching the image buffer directly from Node.js (helps with headers/redirects)
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const imageRes = await fetch(cleanFlyerUrl, {
+          signal: controller.signal,
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        });
+        clearTimeout(timeoutId);
+
+        if (imageRes.ok) {
+          const contentType = imageRes.headers.get('content-type') || '';
+          if (contentType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(cleanFlyerUrl)) {
+            const arrayBuf = await imageRes.arrayBuffer();
+            const buf = Buffer.from(arrayBuf);
+            const base64 = buf.toString('base64');
+            const mime = contentType.startsWith('image/') ? contentType : 'image/jpeg';
+            const dataUri = `data:${mime};base64,${base64}`;
+            const photoUploadResult = await sendTelegramPhoto(dataUri, caption, chatId, targetTopicId, 'event_flyer.jpg');
+            if (photoUploadResult.success) {
+              return photoUploadResult;
+            }
+          }
+        }
+      } catch (fetchErr) {
+        console.warn('[Telegram Photo Buffer] Could not fetch buffer for flyer URL:', fetchErr);
+      }
+    } catch (err: any) {
+      console.warn('[Telegram Photo] Error sending event flyer photo:', err?.message);
+    }
+  }
+
+  // 3. Fallback: Send formatted text message with flyer hyperlink included
+  return await sendTelegramMessage(caption, chatId, targetTopicId, true);
 }
 
 // Destination routing helpers for topic-based Telegram delivery
@@ -842,6 +995,16 @@ async function startServer() {
         body['Special Equipment'] ||
         body['Equipment'];
 
+      const flyerUrl = (
+        body.flyerUrl ||
+        body['Flyer URL'] ||
+        body['Flyer Image URL'] ||
+        body['Flyer'] ||
+        body['Image URL'] ||
+        body['Event Flyer'] ||
+        ''
+      ).trim() || undefined;
+
       // Duplicate submission guard (e.g. form resubmit or double webhook call)
       const isDuplicate = eventsStore.some((e) => {
         const isSameTitle = e.title.trim().toLowerCase() === title.trim().toLowerCase();
@@ -859,9 +1022,11 @@ async function startServer() {
 
       if (isDuplicate) {
         console.warn(`[Duplicate Guard] Ignored duplicate Google Form submission: "${title}" on ${date}`);
-        const existingEvent = eventsStore.find((e) =>
-          e.title.trim().toLowerCase() === title.trim().toLowerCase() &&
-          e.date === date
+        const existingEvent = eventsStore.find(
+          (e) =>
+            e.title.trim().toLowerCase() === title.trim().toLowerCase() &&
+            e.date === date &&
+            e.startTime === startTime
         );
         return res.status(200).json({
           success: true,
@@ -885,6 +1050,7 @@ async function startServer() {
         submitterEmail,
         location,
         description,
+        flyerUrl,
         expectedAttendees,
         equipmentNeeds,
         submittedAt: new Date().toISOString(),
@@ -918,20 +1084,16 @@ async function startServer() {
       // Send Automated Telegram Notification to Administrator
       let telegramResult: { success: boolean; error?: string } = { success: false };
       if (telegramConfig.isConfigured && telegramConfig.notifyOnSubmission) {
-        const dateRangeDisplay = formatEventDateRange(date, endDate, isMultiDay);
-        const tgMessage =
-          `🔔 <b>New Google Form Event Submission</b>\n\n` +
-          `📌 <b>Title:</b> ${title}\n` +
-          `🏷️ <b>Category:</b> ${category.toUpperCase()}\n` +
-          `📅 <b>Date${isMultiDay ? 's' : ''}:</b> ${dateRangeDisplay} (${startTime} - ${endTime})\n` +
-          `📍 <b>Location:</b> ${location}\n` +
-          `👤 <b>Submitter:</b> ${submitterName} (${submitterEmail})\n\n` +
-          `📝 <b>Description:</b>\n${description.slice(0, 300)}\n\n` +
-          `⚠️ <i>Status: Awaiting Administrator Approval in Dashboard</i>`;
+        const tgMessage = formatEventTelegramPost(
+          newEvent,
+          '🔔 <b>NEW EVENT PENDING APPROVAL</b>',
+          '⚠️ <i>Action required: Review and approve or reject in the admin dashboard.</i>'
+        );
 
         const adminDest = getAdminChatAndTopic();
-        telegramResult = await sendTelegramMessage(
+        telegramResult = await sendTelegramEventPost(
           tgMessage,
+          newEvent.flyerUrl,
           adminDest.chatId,
           adminDest.topicId
         );
@@ -976,6 +1138,7 @@ async function startServer() {
         description,
         expectedAttendees = '',
         equipmentNeeds = '',
+        flyerUrl,
       } = req.body;
 
       const trimmedTitle = typeof title === 'string' ? title.trim() : '';
@@ -984,6 +1147,13 @@ async function startServer() {
       let trimmedHandle = typeof submitterEmail === 'string' ? submitterEmail.trim() : '';
       const trimmedLocation = typeof location === 'string' ? location.trim() : '';
       const trimmedDescription = typeof description === 'string' ? description.trim() : '';
+      const trimmedFlyerUrl = typeof flyerUrl === 'string' && flyerUrl.trim() ? flyerUrl.trim() : undefined;
+
+      if (trimmedFlyerUrl && /(?:instagram\.com|instagr\.am)\/(?:p|reel|tv)\//i.test(trimmedFlyerUrl)) {
+        return res.status(400).json({
+          error: 'Instagram post links cannot be used as flyer images because Meta blocks external bot downloads. Please provide a direct image URL (ending in .jpg, .png, .webp, or right-click the image on desktop and select "Copy Image Address").'
+        });
+      }
 
       let endDate: string | undefined = undefined;
       let isMultiDay = false;
@@ -1094,6 +1264,7 @@ async function startServer() {
           submitterEmail: trimmedHandle || (isCelebration ? '@community' : '@member'),
           location: trimmedLocation || (isCelebration ? 'Celebration / Community' : 'Online / TBD'),
           description: trimmedDescription || (isCelebration ? 'Celebration / Anniversary Announcement' : ''),
+          flyerUrl: trimmedFlyerUrl,
           expectedAttendees: typeof expectedAttendees === 'string' ? expectedAttendees.trim() : '',
           equipmentNeeds: typeof equipmentNeeds === 'string' ? equipmentNeeds.trim() : '',
           submittedAt: new Date().toISOString(),
@@ -1130,20 +1301,18 @@ async function startServer() {
         });
 
         if (telegramConfig.isConfigured && telegramConfig.notifyOnSubmission) {
-          const timeDisplay = (firstEvent.startTime && firstEvent.endTime)
-            ? `${firstEvent.startTime} to ${firstEvent.endTime}`
-            : (firstEvent.startTime ? `at ${firstEvent.startTime}` : 'All Day / Untimed');
-          const tgMsg =
-            `🔔 <b>New Recurring ${isCelebration ? 'Celebration' : 'Event'} Request Submitted</b>\n\n` +
-            `📌 <b>${firstEvent.title}</b>\n` +
-            `🔁 <b>Schedule:</b> ${recurrenceRule.humanReadable}\n` +
-            `📅 <b>First Date:</b> ${firstEvent.date} (${timeDisplay})\n` +
-            `🔢 <b>Occurrences:</b> ${createdSeries.length} events\n` +
-            `👤 ${firstEvent.submitterName} (${firstEvent.submitterEmail})\n` +
-            `📍 ${firstEvent.location}\n\n` +
-            `Action required: Approve or reject series in admin dashboard.`;
           const adminDest = getAdminChatAndTopic();
-          const tgResult = await sendTelegramMessage(tgMsg, adminDest.chatId, adminDest.topicId);
+          const adminTgMsg = formatEventTelegramPost(
+            firstEvent,
+            '🔔 <b>NEW EVENT PENDING APPROVAL</b>',
+            '⚠️ <i>Action required: Review and approve or reject in the admin dashboard.</i>'
+          );
+          const tgResult = await sendTelegramEventPost(
+            adminTgMsg,
+            firstEvent.flyerUrl,
+            adminDest.chatId,
+            adminDest.topicId
+          );
           if (tgResult.success) {
             firstEvent.telegramNotified = true;
             firstEvent.telegramDestination = {
@@ -1199,6 +1368,7 @@ async function startServer() {
         submitterEmail: trimmedHandle || (isCelebration ? '@community' : '@member'),
         location: trimmedLocation || (isCelebration ? 'Celebration / Community' : 'Online / TBD'),
         description: trimmedDescription || (isCelebration ? 'Celebration / Anniversary Announcement' : ''),
+        flyerUrl: trimmedFlyerUrl,
         expectedAttendees: typeof expectedAttendees === 'string' ? expectedAttendees.trim() : '',
         equipmentNeeds: typeof equipmentNeeds === 'string' ? equipmentNeeds.trim() : '',
         submittedAt: new Date().toISOString(),
@@ -1226,19 +1396,18 @@ async function startServer() {
       });
 
       if (telegramConfig.isConfigured && telegramConfig.notifyOnSubmission) {
-        const dateRangeDisplay = formatEventDateRange(newEvent.date, newEvent.endDate, newEvent.isMultiDay);
-        const timeDisplay = (newEvent.startTime && newEvent.endTime)
-          ? `${newEvent.startTime} to ${newEvent.endTime}`
-          : (newEvent.startTime ? `at ${newEvent.startTime}` : 'All Day / Untimed');
-        const tgMsg =
-          `🔔 <b>New ${isCelebration ? 'Celebration' : 'Event'} Request Submitted</b>\n\n` +
-          `📌 <b>${newEvent.title}</b>\n` +
-          `📅 <b>Date${newEvent.isMultiDay ? 's' : ''}:</b> ${dateRangeDisplay} (${timeDisplay})\n` +
-          `👤 ${newEvent.submitterName} (${newEvent.submitterEmail})\n` +
-          `📍 ${newEvent.location}\n\n` +
-          `Action required: Approve or reject in admin dashboard.`;
         const adminDest = getAdminChatAndTopic();
-        const tgResult = await sendTelegramMessage(tgMsg, adminDest.chatId, adminDest.topicId);
+        const adminTgMsg = formatEventTelegramPost(
+          newEvent,
+          '🔔 <b>NEW EVENT PENDING APPROVAL</b>',
+          '⚠️ <i>Action required: Review and approve or reject in the admin dashboard.</i>'
+        );
+        const tgResult = await sendTelegramEventPost(
+          adminTgMsg,
+          newEvent.flyerUrl,
+          adminDest.chatId,
+          adminDest.topicId
+        );
         if (tgResult.success) {
           newEvent.telegramNotified = true;
           newEvent.telegramDestination = {
@@ -1290,6 +1459,7 @@ async function startServer() {
         submitterName,
         submitterEmail,
         notes,
+        flyerUrl,
       } = req.body.updates;
 
       const baseDate = date || event.date;
@@ -1315,6 +1485,7 @@ async function startServer() {
         if (endTime !== undefined) target.endTime = endTime;
         if (location !== undefined) target.location = String(location).trim();
         if (description !== undefined) target.description = String(description).trim();
+        if (flyerUrl !== undefined) target.flyerUrl = flyerUrl ? String(flyerUrl).trim() : undefined;
         if (expectedAttendees !== undefined) target.expectedAttendees = expectedAttendees;
         if (equipmentNeeds !== undefined) target.equipmentNeeds = equipmentNeeds;
         if (submitterName !== undefined) target.submitterName = String(submitterName).trim();
@@ -1354,29 +1525,13 @@ async function startServer() {
       const resolved = getEventsChatAndTopic();
       targetChatUsed = resolved.chatId;
       if (targetChatUsed) {
-        const timeStr = event.startTime
-          ? `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ''}`
-          : (event.category === 'celebration' ? 'All Day Celebration' : 'All Day / Untimed');
-        const recurrenceInfo = event.isRecurring && event.recurrenceRule?.humanReadable
-          ? `\n🔁 <b>Series:</b> ${event.recurrenceRule.humanReadable}`
-          : '';
-        const dateRangeDisplay = formatEventDateRange(event.date, event.endDate, event.isMultiDay);
+        const tgMsg = formatEventTelegramPost(
+          event,
+          '✅ <b>NEW EVENT</b>',
+          '🔗 <i>This event is now live on the public community calendar!</i>'
+        );
 
-        const tgMsg =
-          `✅ <b>NEW EVENT APPROVED</b>\n\n` +
-          `📌 <b>${event.title}</b>\n` +
-          `📅 <b>Date${event.isMultiDay ? 's' : ''}:</b> ${dateRangeDisplay}\n` +
-          `⏰ <b>Time:</b> ${timeStr}\n` +
-          `🏷️ <b>Category:</b> ${event.category.toUpperCase()}\n` +
-          `📍 <b>Location:</b> ${event.location || 'Community Venue / Virtual'}\n` +
-          `👤 <b>Organizer:</b> ${event.submitterName}\n` +
-          (event.expectedAttendees ? `👥 <b>Expected Attendees:</b> ${event.expectedAttendees}\n` : '') +
-          (event.equipmentNeeds ? `🛠️ <b>Equipment/Notes:</b> ${event.equipmentNeeds}\n` : '') +
-          recurrenceInfo +
-          `\n📝 <b>Description:</b>\n${event.description || 'No description provided.'}\n\n` +
-          `🔗 <i>This event is now live on the public community calendar!</i>`;
-
-        const sent = await sendTelegramMessage(tgMsg, targetChatUsed, resolved.topicId);
+        const sent = await sendTelegramEventPost(tgMsg, event.flyerUrl, targetChatUsed, resolved.topicId);
         telegramDispatched = sent.success;
         if (sent.success) {
           event.telegramNotified = true;
@@ -1453,6 +1608,13 @@ async function startServer() {
 
     const targetEvent = eventsStore[eventIndex];
     const previous = { ...targetEvent };
+
+    if (req.body.flyerUrl && typeof req.body.flyerUrl === 'string' && /(?:instagram\.com|instagr\.am)\/(?:p|reel|tv)\//i.test(req.body.flyerUrl.trim())) {
+      return res.status(400).json({
+        error: 'Instagram post links cannot be used as flyer images because Meta blocks external bot downloads. Please provide a direct image URL (ending in .jpg, .png, .webp, or right-click the image on desktop and select "Copy Image Address").'
+      });
+    }
+
     const scope = req.query.scope || req.body.scope || 'single';
     const applyToSeries = scope === 'series' && Boolean(targetEvent.recurringSeriesId);
 
@@ -1460,7 +1622,7 @@ async function startServer() {
       const seriesId = targetEvent.recurringSeriesId!;
       const seriesEvents = eventsStore.filter(e => e.recurringSeriesId === seriesId);
 
-      const { title, category, location, description, startTime, endTime, submitterName, submitterEmail, expectedAttendees, equipmentNeeds, notes, isMultiDay, endDate } = req.body;
+      const { title, category, location, description, startTime, endTime, submitterName, submitterEmail, expectedAttendees, equipmentNeeds, notes, isMultiDay, endDate, flyerUrl } = req.body;
 
       const baseDate = req.body.date ? String(req.body.date).trim() : targetEvent.date;
       const baseEndDate = endDate !== undefined ? (String(endDate).trim() || undefined) : targetEvent.endDate;
@@ -1480,6 +1642,9 @@ async function startServer() {
         if (expectedAttendees !== undefined) sEvt.expectedAttendees = String(expectedAttendees).trim();
         if (equipmentNeeds !== undefined) sEvt.equipmentNeeds = String(equipmentNeeds).trim();
         if (notes !== undefined) sEvt.notes = String(notes).trim();
+        if (flyerUrl !== undefined) {
+          sEvt.flyerUrl = flyerUrl ? String(flyerUrl).trim() : undefined;
+        }
         if (isMultiDay !== undefined) {
           sEvt.isMultiDay = Boolean(isMultiDay);
         }
@@ -1577,6 +1742,9 @@ async function startServer() {
     const updated = { ...previous, ...req.body };
     // Ensure editing or rescheduling an event never changes its approval status
     updated.status = previous.status;
+    if (req.body.flyerUrl !== undefined) {
+      updated.flyerUrl = req.body.flyerUrl ? String(req.body.flyerUrl).trim() : undefined;
+    }
     if (req.body.endDate !== undefined) {
       const trimmedEnd = String(req.body.endDate).trim();
       updated.endDate = trimmedEnd || undefined;
@@ -2082,26 +2250,13 @@ async function startServer() {
       });
     }
 
-    const timeStr = event.startTime
-      ? `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ''}`
-      : (event.category === 'celebration' ? 'All Day Celebration' : 'All Day / Untimed');
+    const tgMsg = formatEventTelegramPost(
+      event,
+      '🎉 <b>COMMUNITY EVENT SPOTLIGHT</b>',
+      '🔗 <i>Live on the official community calendar.</i>'
+    );
 
-    const dateRangeDisplay = formatEventDateRange(event.date, event.endDate, event.isMultiDay);
-
-    const tgMsg =
-      `🎉 <b>COMMUNITY EVENT SPOTLIGHT</b>\n\n` +
-      `📌 <b>${event.title}</b>\n` +
-      `📅 <b>Date${event.isMultiDay ? 's' : ''}:</b> ${dateRangeDisplay}\n` +
-      `⏰ <b>Time:</b> ${timeStr}\n` +
-      `🏷️ <b>Category:</b> ${event.category.toUpperCase()}\n` +
-      `📍 <b>Location:</b> ${event.location || 'Community Venue / Virtual'}\n` +
-      `👤 <b>Organizer:</b> ${event.submitterName}\n` +
-      (event.expectedAttendees ? `👥 <b>Expected Attendees:</b> ${event.expectedAttendees}\n` : '') +
-      (event.equipmentNeeds ? `🛠️ <b>Equipment/Notes:</b> ${event.equipmentNeeds}\n` : '') +
-      `\n📝 <b>Event Details:</b>\n${event.description || 'Join us for this scheduled community event!'}\n\n` +
-      `🔗 <i>Live on the official community calendar.</i>`;
-
-    const result = await sendTelegramMessage(tgMsg, targetChat, targetTopic);
+    const result = await sendTelegramEventPost(tgMsg, event.flyerUrl, targetChat, targetTopic);
     if (result.success) {
       event.telegramNotified = true;
       saveEvents(eventsStore);
@@ -2238,16 +2393,21 @@ async function startServer() {
         ? `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ''}`
         : 'All Day / Untimed';
 
+      const flyerInfo = event.flyerUrl
+        ? `🖼️ <b>Event Flyer:</b> <a href="${event.flyerUrl}">View Flyer Details</a>\n`
+        : '';
+
       const tgMsg =
         `⏰ <b>Upcoming Event Reminder</b>\n\n` +
         `📌 <b>${event.title}</b>\n` +
         `📅 <b>Date${event.isMultiDay ? 's' : ''}:</b> ${dateRangeDisplay}\n` +
         `🕒 <b>Time:</b> ${timeStr}\n` +
-        `📍 <b>Location:</b> ${event.location}\n\n` +
+        `📍 <b>Location:</b> ${event.location}\n` +
+        flyerInfo + `\n` +
         `📝 ${event.description}\n\n` +
         `See full calendar for details.`;
 
-      const result = await sendTelegramMessage(tgMsg, targetChat, targetTopic);
+      const result = await sendTelegramEventPost(tgMsg, event.flyerUrl, targetChat, targetTopic);
       return res.json({
         ...result,
         postedToChat: targetChat,

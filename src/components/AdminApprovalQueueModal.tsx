@@ -19,6 +19,7 @@ import {
   Calendar,
   Repeat,
   CalendarRange,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface AdminApprovalQueueModalProps {
@@ -286,6 +287,20 @@ export const AdminApprovalQueueModal: React.FC<AdminApprovalQueueModalProps> = (
                         <FileSpreadsheet className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         {evt.source === 'google_form' ? 'Google Form' : 'Direct Submission'}
                       </span>
+
+                      {evt.flyerUrl && (
+                        <a
+                          href={evt.flyerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 px-2 py-0.5 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/80 transition-colors"
+                          title="Open attached event flyer link"
+                        >
+                          <ImageIcon className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                          <span>Flyer Attached</span>
+                        </a>
+                      )}
                     </div>
 
                     <span className="text-[11px] text-slate-400 dark:text-slate-500">

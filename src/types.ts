@@ -47,6 +47,7 @@ export interface CalendarEvent {
   submitterEmail: string;
   location: string; // physical venue or virtual meeting link
   description: string;
+  flyerUrl?: string; // Optional link or direct image URL to event flyer
   expectedAttendees?: string | number;
   equipmentNeeds?: string;
   notes?: string;
